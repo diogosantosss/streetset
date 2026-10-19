@@ -2,6 +2,7 @@ package com.example.streetset.presentation.programs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -40,20 +41,21 @@ fun ProgramsScreenStructure(
 
 @Composable
 fun ProgramsScreen(
-    vm: ProgramsViewModel = koinViewModel<ProgramsViewModel>()
+    onAddClick: () -> Unit,
+    vm: ProgramsViewModel = koinViewModel<ProgramsViewModel>(),
 ) {
-    when (val state =  vm.state.collectAsState().value) {
+    when (val state = vm.state.collectAsState().value) {
         is ProgramsState.Idle -> ProgramsScreenLoading()
 
         is ProgramsState.Loading -> ProgramsScreenLoading()
 
         is ProgramsState.Success -> {
             if (state.programs.isEmpty()) {
-                ProgramsScreenEmpty()
+                ProgramsScreenEmpty(onAddClick = onAddClick)
             } else {
                 ProgramsScreenView(
                     programs = state.programs,
-                    onAddClick = {},
+                    onAddClick = onAddClick,
                     onProgramClick = {},
                 )
             }
@@ -82,40 +84,39 @@ fun ProgramsScreenView(
                 modifier = Modifier,
             )
 
-            Button(
-                imageVector = Lucide.Plus,
-                onClick = onAddClick,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(end = 16.dp, top = 8.dp),
-            )
+            ProgramsAddButton(onAddClick)
         }
     }
 }
 
 @Composable
-fun ProgramsScreenLoading() {
-    ProgramsScreenStructure {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator()
-        }
-    }
+private fun BoxScope.ProgramsAddButton(onClick: () -> Unit) {
+    Button(
+        imageVector = Lucide.Plus,
+        onClick = onClick,
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(end = 16.dp, top = 8.dp),
+    )
 }
 
 @Composable
-fun ProgramsScreenEmpty() {
+fun ProgramsScreenEmpty(
+    onAddClick: () -> Unit,
+) {
     ProgramsScreenStructure {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            EmptyState(
-                title = "No programs yet",
-                subtitle = "Create your first training program to get started",
-            )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                EmptyState(
+                    title = "No programs yet",
+                    subtitle = "Create your first training program to get started",
+                )
+            }
+
+            ProgramsAddButton(onAddClick)
         }
     }
 }
@@ -131,6 +132,18 @@ fun ProgramsScreenError(message: String) {
                 title = "Something went wrong",
                 subtitle = message,
             )
+        }
+    }
+}
+
+@Composable
+fun ProgramsScreenLoading() {
+    ProgramsScreenStructure {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator()
         }
     }
 }

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import kotlinx.datetime.daysUntil
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -49,6 +50,23 @@ class ProgramsViewModel : ViewModel(), KoinComponent {
                 .collect { programs ->
                     _state.value = ProgramsState.Success(programs)
                 }
+        }
+    }
+
+    fun createProgram(input: ProgramInput) {
+        if (!input.isValid) return
+
+        viewModelScope.launch {
+            val weeksCount = (input.startDate.daysUntil(input.endDate) / 7).coerceAtLeast(1)
+            programDao.insert(
+                Program(
+                    name = input.name.trim(),
+                    goal = input.goal.trim().ifBlank { null },
+                    startDate = input.startDate,
+                    endDate = input.endDate,
+                    weeksCount = weeksCount,
+                ),
+            )
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.streetset.di
 
 import com.example.streetset.data.DatabaseSeeder
+import com.example.streetset.presentation.app.AppViewModel
 import com.example.streetset.presentation.programs.ProgramsViewModel
 import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.singleOf
@@ -14,6 +15,7 @@ val appModule = module {
 
     singleOf(::DatabaseSeeder)
 
+    viewModelOf(::AppViewModel)
     viewModelOf(::ProgramsViewModel)
 }
 

@@ -2,8 +2,8 @@ package com.example.streetset.data.entities
 
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
+import com.example.streetset.util.shortDisplay
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.todayIn
@@ -18,13 +18,8 @@ data class Program(
     val endDate: LocalDate? = null,
     val weeksCount: Int? = null,
 ) {
-    fun formatDateRange(): String = "${startDate.short()} - ${endDate.short()}"
-
-    private fun LocalDate?.short(): String =
-        this?.let { "${it.day} ${it.month.short()}" } ?: "—"
-
-    private fun Month.short(): String =
-        name.take(3).lowercase().replaceFirstChar { it.uppercase() }
+    fun formatDateRange(): String =
+        "${startDate?.shortDisplay() ?: "?"} - ${endDate?.shortDisplay() ?: "?"}"
 }
 
 fun Program.currentWeek(

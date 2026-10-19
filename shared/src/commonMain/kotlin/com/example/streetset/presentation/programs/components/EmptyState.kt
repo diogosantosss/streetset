@@ -19,7 +19,19 @@ import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.ui.graphics.Color
+import com.composables.icons.lucide.BadgePlus
+import com.composables.icons.lucide.CalendarPlus
+import com.composables.icons.lucide.Dumbbell
+import com.composables.icons.lucide.ListPlus
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.SquareDashed
+import com.composables.icons.lucide.SquareDashedBottom
+import com.composables.icons.lucide.SquareDashedKanban
+import com.composables.icons.lucide.SquarePlus
+import com.composables.icons.lucide.StickyNote
 
 @Composable
 fun EmptyState(
@@ -36,6 +48,12 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Icon(
+            imageVector = Lucide.ListPlus,
+            contentDescription = null,
+            tint = colors.accent,
+            modifier = Modifier.size(28.dp)
+        )
         Text(
             text = title,
             fontSize = 18.sp,
