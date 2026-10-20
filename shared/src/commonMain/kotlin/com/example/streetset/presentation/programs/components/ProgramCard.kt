@@ -30,6 +30,7 @@ import com.example.streetset.data.entities.currentWeek
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.graphics.Color
 import com.composables.icons.lucide.Lucide
 import com.example.streetset.ui.components.ProgressBar
@@ -38,7 +39,7 @@ import kotlinx.datetime.LocalDate
 @Composable
 fun ProgramCard(
     program: Program,
-    onClick: () -> Unit,
+    onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
@@ -49,6 +50,7 @@ fun ProgramCard(
             .shadow(4.dp, RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp))
             .background(colors.surface)
+            .combinedClickable(onLongClick = onLongPress, onClick = {})
             .padding(16.dp)
     ) {
         Row(
@@ -143,7 +145,7 @@ private fun ProgramCardPreview() {
                     endDate = LocalDate(2026, 11, 17),
                     weeksCount = 4,
                 ),
-                onClick = {}
+                onLongPress = {},
             )
         }
     }

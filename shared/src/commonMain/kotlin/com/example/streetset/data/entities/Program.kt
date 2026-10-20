@@ -1,6 +1,7 @@
 package com.example.streetset.data.entities
 
 import androidx.room3.Entity
+import androidx.room3.Index
 import androidx.room3.PrimaryKey
 import com.example.streetset.util.shortDisplay
 import kotlinx.datetime.LocalDate
@@ -9,7 +10,10 @@ import kotlinx.datetime.daysUntil
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
-@Entity(tableName = "programs")
+@Entity(
+    tableName = "programs",
+    indices = [Index(value = ["name"], unique = true)],
+)
 data class Program(
     @PrimaryKey(autoGenerate = true) val id: Int? = null,
     val name: String,

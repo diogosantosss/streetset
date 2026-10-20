@@ -16,6 +16,9 @@ interface ProgramDao {
     @Query("SELECT * FROM programs WHERE id = :id")
     suspend fun getById(id: Int): Program?
 
+    @Query("SELECT * FROM programs WHERE name = :name LIMIT 1")
+    suspend fun getByName(name: String): Program?
+
     @Insert
     suspend fun insert(program: Program): Long
 

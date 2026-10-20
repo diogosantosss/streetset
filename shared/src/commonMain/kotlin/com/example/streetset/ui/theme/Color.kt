@@ -13,7 +13,8 @@ data class AppColors(
     val accent: Color,
     val success: Color,
     val onAccent: Color,
-    val shadow: Color
+    val shadow: Color,
+    val error: Color,
 )
 
 val darkColors = AppColors(
@@ -27,7 +28,8 @@ val darkColors = AppColors(
     accent = Color(0xFF0A84FF),
     success = Color(0xFF32D74B),
     onAccent = Color(0xFFFFFFFF),
-    shadow = Color(0x26000000)
+    shadow = Color(0x26000000),
+    error = Color(0xFFFF453A)
 )
 
 val lightColors = AppColors(
@@ -41,5 +43,6 @@ val lightColors = AppColors(
     accent = Color(0xFF3B82F6),
     success = Color(0xFF1F9D46),
     onAccent = Color(0xFFFFFFFF),
-    shadow = Color(0x20000000)
+    shadow = Color(0x20000000),
+    error = Color(0xFFD32F2F),
 )

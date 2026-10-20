@@ -25,7 +25,7 @@ fun ProgramList(
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 128.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (header != null) {
@@ -37,7 +37,7 @@ fun ProgramList(
         items(programs, key = { it.id ?: it.hashCode() }) { program ->
             ProgramCard(
                 program = program,
-                onClick = { onProgramClick(program) }
+                onLongPress = { onProgramClick(program) }
             )
         }
     }
