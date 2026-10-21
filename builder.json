@@ -1,0 +1,22 @@
+{
+  "project": "streetset",
+  "platform": "ios",
+  "github": {
+    "owner": "diogosantosss",
+    "repo": "streetset"
+  },
+  "provider": "github",
+  "codemagic": {},
+  "bitrise": {},
+  "ios": {
+    "path": "iosApp"
+  },
+  "flutter": {
+    "watch": {}
+  },
+  "reactNative": {},
+  "kmp": {
+    "jdkVersion": "25"
+  },
+  "mobai": {}
+}
