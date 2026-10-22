@@ -23,3 +23,5 @@ fun initKoin(config: KoinAppDeclaration? = null) {
         modules(appModule)
     }
 }
+
+fun initKoin() = initKoin {}

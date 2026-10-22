@@ -1,6 +1,7 @@
 package com.example.streetset.di
 
 import androidx.room3.Room
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.example.streetset.data.StreetSetDatabase
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -10,6 +11,7 @@ private fun provideDataBase(): StreetSetDatabase =
     Room.databaseBuilder<StreetSetDatabase>(
         name = NSHomeDirectory() + "/Documents/" + DATABASE_NAME,
     )
+        .setDriver(BundledSQLiteDriver())
         .fallbackToDestructiveMigration(true)
         .build()
 
