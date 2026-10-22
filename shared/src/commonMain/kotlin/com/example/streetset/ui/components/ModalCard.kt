@@ -5,14 +5,19 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.streetset.ui.theme.LocalAppColors
@@ -38,6 +44,7 @@ fun ModalCard(
     visible: Boolean,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    canDismiss: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = LocalAppColors.current
@@ -57,7 +64,7 @@ fun ModalCard(
 
     if (render) {
         Dialog(
-            onDismissRequest = onDismiss,
+            onDismissRequest = { if (canDismiss) onDismiss() },
             properties = DialogProperties(usePlatformDefaultWidth = false),
         ) {
             Box(
@@ -69,7 +76,11 @@ fun ModalCard(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.Black.copy(alpha = 0.28f * progress.value))
-                        .pointerInput(Unit) { detectTapGestures { onDismiss() } },
+                        .pointerInput(canDismiss) {
+                            if (canDismiss) {
+                                detectTapGestures { onDismiss() }
+                            }
+                        },
                 )
 
                 Column(
@@ -85,14 +96,41 @@ fun ModalCard(
                         }
                         .shadow(24.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
                         .clip(shape)
-                        .background(colors.surfaceHigh.copy(alpha = 0.82f))
-                        .border(1.dp, Color.White.copy(alpha = 0.20f), shape)
+                        .background(colors.surfaceHigh.copy(alpha = 0.94f))
+                        .border(1.dp, colors.border.copy(alpha = 0.6f), shape)
                         .padding(24.dp)
-                        .pointerInput(Unit) { detectTapGestures { } }
+                        .pointerInput(Unit) { }
                         .then(modifier),
                     content = content,
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun ProcessingModal(text: String) {
+    val colors = LocalAppColors.current
+
+    ModalCard(
+        visible = true,
+        onDismiss = {},
+        canDismiss = false,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = colors.accent,
+                strokeWidth = 2.dp,
+            )
+            Text(
+                text = text,
+                fontSize = 16.sp,
+                color = colors.textPrimary,
+            )
         }
     }
 }

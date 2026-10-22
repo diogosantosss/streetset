@@ -1,17 +1,24 @@
 package com.example.streetset.presentation.programs
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.example.streetset.data.entities.Program
@@ -19,10 +26,14 @@ import com.example.streetset.presentation.programs.components.EmptyState
 import com.example.streetset.presentation.programs.components.ProgramFormSheet
 import com.example.streetset.presentation.programs.components.ProgramList
 import com.example.streetset.presentation.programs.components.ProgramOptionsSheet
-import com.example.streetset.presentation.programs.components.ProgramsTitle
-import com.example.streetset.ui.components.Button
 import com.example.streetset.ui.components.ConfirmSheet
+import com.example.streetset.ui.components.ModalCard
+import com.example.streetset.ui.components.ProcessingModal
+import com.example.streetset.ui.components.TopBar
+import com.example.streetset.ui.components.TopBarDefaults
 import com.example.streetset.ui.theme.LocalAppColors
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -36,7 +47,6 @@ fun ProgramsScreenStructure(
         modifier = modifier
             .fillMaxSize()
             .background(colors.background)
-            .statusBarsPadding()
     ) {
         content()
     }
@@ -44,143 +54,168 @@ fun ProgramsScreenStructure(
 
 @Composable
 fun ProgramsScreen(
-    vm: ProgramsViewModel = koinViewModel<ProgramsViewModel>(),
+    programsViewModel: ProgramsViewModel = koinViewModel<ProgramsViewModel>(),
+    sheetViewModel : SheetViewModel = koinViewModel<SheetViewModel>(),
+    hazeState: HazeState,
 ) {
-    val state = vm.state.collectAsState().value
-    val sheet = (state as? ProgramsState.Success)?.sheet ?: ProgramsState.Sheet.None
+    val programsState = programsViewModel.state.collectAsState().value
+    val sheetState = sheetViewModel.sheetState.collectAsState().value
+    val listState = rememberLazyListState()
 
-    when (state) {
-        is ProgramsState.Loading -> ProgramsScreenLoading()
-
-        is ProgramsState.Success -> {
-            if (state.programs.isEmpty()) {
-                ProgramsScreenEmpty(onAddClick = vm::openCreateForm)
-            } else {
-                ProgramsScreenView(
-                    programs = state.programs,
-                    onAddClick = vm::openCreateForm,
-                    onProgramClick = vm::selectProgram,
-                )
-            }
-        }
-
-        is ProgramsState.Error -> ProgramsScreenError(state.error)
+    val scrolled by remember {
+        derivedStateOf { listState.firstVisibleItemScrollOffset > 0 }
     }
 
-    val options = sheet as? ProgramsState.Sheet.Options
-    ProgramOptionsSheet(
-        visible = options != null,
-        program = options?.program,
-        onEdit = { options?.program?.let(vm::openEditForm) },
-        onDelete = { options?.program?.let(vm::requestDelete) },
-        onDismiss = vm::dismissSheet,
-    )
+    ProgramsScreenStructure {
+        Box(modifier = Modifier.fillMaxSize()) {
+            when (programsState) {
+                is ProgramsState.Loading -> ProgramsScreenLoadingContent()
 
-    val confirmDelete = sheet as? ProgramsState.Sheet.ConfirmDelete
-    ConfirmSheet(
-        visible = confirmDelete != null,
-        title = "Delete Program?",
-        message = "Are you sure you want to delete \"" +
-                (confirmDelete?.program?.name ?: "") +
-                "\"? This action cannot be undone.",
-        confirmText = "Delete",
-        isDestructive = true,
-        onConfirm = vm::confirmDelete,
-        onDismiss = vm::dismissSheet,
-    )
+                is ProgramsState.Success -> {
+                    if (programsState.programs.isEmpty()) {
+                        ProgramsScreenEmptyContent()
+                    } else {
+                        ProgramsScreenListContent(
+                            programs = programsState.programs,
+                            hazeState = hazeState,
+                            listState = listState,
+                            onProgramClick = sheetViewModel::showOptions,
+                        )
+                    }
+                }
 
-    val form = sheet as? ProgramsState.Sheet.Form
-    ProgramFormSheet(
-        visible = form != null,
-        title = if (form?.program != null) "Edit Program" else "New Program",
-        confirmText = if (form?.program != null) "Save" else "Create",
-        initialInput = form?.program?.let { ProgramInput.fromProgram(it) },
-        error = form?.error,
-        onConfirm = vm::submitForm,
-        onDismiss = vm::dismissSheet,
-        onErrorCleared = vm::clearFormError,
+                is ProgramsState.Error -> ProgramsScreenErrorContent(programsState.error)
+            }
+
+            ProgramsTopBar(
+                state = programsState,
+                hazeState = hazeState,
+                scrolled = scrolled,
+                onAddClick = sheetViewModel::showCreateForm,
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
+        }
+    }
+
+    when (sheetState) {
+        is SheetState.Options -> {
+            ProgramOptionsSheet(
+                visible = true,
+                program = sheetState.program,
+                onEdit = { sheetViewModel.showEditForm(sheetState.program) },
+                onDelete = { sheetViewModel.requestDelete(sheetState.program) },
+                onDismiss = sheetViewModel::dismiss,
+            )
+        }
+
+        is SheetState.ConfirmDelete -> {
+            ConfirmSheet(
+                visible = true,
+                title = "Delete Program?",
+                message = "Are you sure you want to delete \"${sheetState.program.name}\"? This action cannot be undone.",
+                confirmText = "Delete",
+                isDestructive = true,
+                onConfirm = sheetViewModel::confirmDelete,
+                onDismiss = sheetViewModel::dismiss,
+            )
+        }
+
+        is SheetState.Form -> {
+            ProgramFormSheet(
+                visible = true,
+                title = if (sheetState.program != null) "Edit Program" else "New Program",
+                confirmText = if (sheetState.program != null) "Save" else "Create",
+                initialInput = sheetState.program?.let { ProgramInput.fromProgram(it) },
+                error = sheetState.error,
+                onConfirm = sheetViewModel::submitForm,
+                onDismiss = sheetViewModel::dismiss,
+                onErrorCleared = sheetViewModel::clearFormError,
+            )
+        }
+
+        is SheetState.Deleting -> {
+            ProcessingModal(text = "Deleting program...")
+        }
+
+        is SheetState.Submitting -> {
+            ProcessingModal(
+                text = if (sheetState.program == null) "Creating program..." else "Saving program...",
+            )
+        }
+
+        SheetState.None -> Unit
+    }
+}
+
+@Composable
+private fun ProgramsTopBar(
+    state: ProgramsState,
+    hazeState: HazeState,
+    scrolled: Boolean,
+    onAddClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isSuccessWithPrograms = state is ProgramsState.Success && state.programs.isNotEmpty()
+    val isSuccessEmpty = state is ProgramsState.Success && state.programs.isEmpty()
+
+    TopBar(
+        title = "Programs",
+        scrolled = isSuccessWithPrograms && scrolled,
+        hazeState = if (isSuccessWithPrograms) hazeState else null,
+        actionIcon = if (isSuccessWithPrograms || isSuccessEmpty) Lucide.Plus else null,
+        onActionClick = onAddClick,
+        modifier = modifier,
     )
 }
 
 @Composable
-fun ProgramsScreenView(
+private fun ProgramsScreenListContent(
     programs: List<Program>,
-    onAddClick: () -> Unit,
+    hazeState: HazeState,
+    listState: LazyListState,
     onProgramClick: (Program) -> Unit,
 ) {
-    ProgramsScreenStructure {
-        Box(modifier = Modifier.fillMaxSize()) {
-            ProgramList(
-                programs = programs,
-                onProgramClick = { onProgramClick(it) },
-                header = {
-                    ProgramsTitle(
-                        modifier = Modifier.padding(end = 64.dp),
-                    )
-                },
-                modifier = Modifier,
-            )
-
-            ProgramsAddButton(onAddClick)
-        }
-    }
-}
-
-@Composable
-private fun BoxScope.ProgramsAddButton(onClick: () -> Unit) {
-    Button(
-        imageVector = Lucide.Plus,
-        onClick = onClick,
-        modifier = Modifier
-            .align(Alignment.TopEnd)
-            .padding(end = 16.dp, top = 8.dp),
+    ProgramList(
+        programs = programs,
+        onProgramClick = onProgramClick,
+        state = listState,
+        topPadding = TopBarDefaults.Height + 16.dp,
+        modifier = Modifier.hazeSource(hazeState),
     )
 }
 
 @Composable
-fun ProgramsScreenEmpty(
-    onAddClick: () -> Unit,
-) {
-    ProgramsScreenStructure {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                EmptyState(
-                    title = "No programs yet",
-                    subtitle = "Create your first training program to get started",
-                )
-            }
-
-            ProgramsAddButton(onAddClick)
-        }
+private fun ProgramsScreenEmptyContent() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        EmptyState(
+            title = "No programs yet",
+            subtitle = "Create your first training program to get started",
+        )
     }
 }
 
 @Composable
-fun ProgramsScreenError(message: String) {
-    ProgramsScreenStructure {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            EmptyState(
-                title = "Something went wrong",
-                subtitle = message,
-            )
-        }
+private fun ProgramsScreenErrorContent(message: String) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        EmptyState(
+            title = "Something went wrong",
+            subtitle = message,
+        )
     }
 }
 
 @Composable
-fun ProgramsScreenLoading() {
-    ProgramsScreenStructure {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator()
-        }
+private fun ProgramsScreenLoadingContent() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator()
     }
 }

@@ -25,6 +25,9 @@ import com.example.streetset.ui.components.AppTextField
 import com.example.streetset.ui.components.DateField
 import com.example.streetset.ui.components.ModalCard
 import com.example.streetset.ui.theme.LocalAppColors
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 
 @Composable
 fun ProgramFormSheet(
@@ -120,6 +123,10 @@ fun ProgramFormSheet(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp),
+                border = BorderStroke(1.dp, colors.border.copy(alpha = 0.7f)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = colors.textPrimary,
+                ),
             ) {
                 Text("Cancel")
             }
@@ -130,6 +137,12 @@ fun ProgramFormSheet(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.accent,
+                    contentColor = colors.textPrimary,
+                    disabledContainerColor = colors.accent.copy(alpha = 0.4f),
+                    disabledContentColor = colors.textPrimary.copy(alpha = 0.6f),
+                ),
             ) {
                 Text(displayConfirmText)
             }

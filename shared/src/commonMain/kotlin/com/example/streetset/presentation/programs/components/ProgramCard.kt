@@ -1,5 +1,8 @@
 package com.example.streetset.presentation.programs.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,21 +22,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Calendar
 import com.composables.icons.lucide.Dumbbell
+import com.composables.icons.lucide.Lucide
 import com.example.streetset.data.entities.Program
 import com.example.streetset.data.entities.currentWeek
+import com.example.streetset.ui.components.ProgressBar
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
-import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.ui.graphics.Color
-import com.composables.icons.lucide.Lucide
-import com.example.streetset.ui.components.ProgressBar
 import kotlinx.datetime.LocalDate
 
 @Composable
@@ -43,13 +45,22 @@ fun ProgramCard(
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
+    val shape = RoundedCornerShape(18.dp)
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(4.dp, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp))
-            .background(colors.surface)
+            .shadow(6.dp, shape, ambientColor = Color.Black.copy(alpha = 0.4f), spotColor = Color.Black.copy(alpha = 0.4f))
+            .clip(shape)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        colors.surfaceHigh.copy(alpha = 0.98f),
+                        colors.surfaceHigh.copy(alpha = 0.92f),
+                    ),
+                ),
+            )
+            .border(1.dp, colors.border.copy(alpha = 0.5f), shape)
             .combinedClickable(onLongClick = onLongPress, onClick = {})
             .padding(16.dp)
     ) {
@@ -61,7 +72,8 @@ fun ProgramCard(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(colors.accent.copy(alpha = 0.15f)),
+                    .background(colors.accent.copy(alpha = 0.12f))
+                    .border(1.dp, colors.accent.copy(alpha = 0.4f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

@@ -1,5 +1,6 @@
 package com.example.streetset.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -65,6 +66,10 @@ fun ConfirmSheet(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp),
+                border = BorderStroke(1.dp, colors.border.copy(alpha = 0.7f)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = colors.textPrimary,
+                ),
             ) {
                 Text(cancelText)
             }
@@ -75,9 +80,15 @@ fun ConfirmSheet(
                     .weight(1f)
                     .height(48.dp),
                 colors = if (isDestructive) {
-                    ButtonDefaults.buttonColors(containerColor = colors.error)
+                    ButtonDefaults.buttonColors(
+                        containerColor = colors.error,
+                        contentColor = colors.textPrimary,
+                    )
                 } else {
-                    ButtonDefaults.buttonColors()
+                    ButtonDefaults.buttonColors(
+                        containerColor = colors.accent,
+                        contentColor = colors.textPrimary,
+                    )
                 },
             ) {
                 Text(confirmText)

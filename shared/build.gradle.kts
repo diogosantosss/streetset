@@ -80,6 +80,11 @@ kotlin {
             // icons
             implementation(libs.composeIcons.lucide)
 
+            // blur
+            implementation(libs.haze)
+            implementation(libs.haze.blur)
+            implementation(libs.haze.blur.materials)
+
             // datetime
             implementation(libs.kotlinx.datetime)
         }

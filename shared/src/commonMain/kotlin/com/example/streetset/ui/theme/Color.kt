@@ -29,7 +29,7 @@ val darkColors = AppColors(
     success = Color(0xFF32D74B),
     onAccent = Color(0xFFFFFFFF),
     shadow = Color(0x26000000),
-    error = Color(0xFFFF453A)
+    error = Color(0xFFFF453A),
 )
 
 val lightColors = AppColors(
@@ -45,4 +45,94 @@ val lightColors = AppColors(
     onAccent = Color(0xFFFFFFFF),
     shadow = Color(0x20000000),
     error = Color(0xFFD32F2F),
+)
+
+val lightWarmColors = AppColors(
+    background = Color(0xFFFBF7F0),
+    surface = Color(0xFFFFFFFF),
+    surfaceHigh = Color(0xFFF4EDE2),
+    border = Color(0xFFE3D8C8),
+    textPrimary = Color(0xFF2A2420),
+    textSecondary = Color(0xFF6B6156),
+    textTertiary = Color(0xFFA89B8A),
+    accent = Color(0xFFD9480F),
+    success = Color(0xFF1F9D46),
+    onAccent = Color(0xFFFFFFFF),
+    shadow = Color(0x1A000000),
+    error = Color(0xFFD32F2F),
+)
+
+val lightCoolColors = AppColors(
+    background = Color(0xFFF5F9F8),
+    surface = Color(0xFFFFFFFF),
+    surfaceHigh = Color(0xFFE8F2EF),
+    border = Color(0xFFCFE0DB),
+    textPrimary = Color(0xFF12211D),
+    textSecondary = Color(0xFF4A5B57),
+    textTertiary = Color(0xFF88A29B),
+    accent = Color(0xFF059669),
+    success = Color(0xFF047857),
+    onAccent = Color(0xFFFFFFFF),
+    shadow = Color(0x14000000),
+    error = Color(0xFFD32F2F),
+)
+
+val lightIndigoColors = AppColors(
+    background = Color(0xFFF5F5FC),
+    surface = Color(0xFFFFFFFF),
+    surfaceHigh = Color(0xFFEBEBF8),
+    border = Color(0xFFD6D6EE),
+    textPrimary = Color(0xFF1B1B33),
+    textSecondary = Color(0xFF55556E),
+    textTertiary = Color(0xFF9394AD),
+    accent = Color(0xFF4F46E5),
+    success = Color(0xFF1F9D46),
+    onAccent = Color(0xFFFFFFFF),
+    shadow = Color(0x14000000),
+    error = Color(0xFFD32F2F),
+)
+
+val darkGreenColors = AppColors(
+    background = Color(0xFF1B1B21),
+    surface = Color(0xFF26262E),
+    surfaceHigh = Color(0xFF31313A),
+    border = Color(0xFF3C3C46),
+    textPrimary = Color(0xFFF2F2F5),
+    textSecondary = Color(0xFFAAAAB4),
+    textTertiary = Color(0xFF7F7F8A),
+    accent = Color(0xFF30D158),
+    success = Color(0xFF32D74B),
+    onAccent = Color(0xFF0F2010),
+    shadow = Color(0x26000000),
+    error = Color(0xFFFF453A),
+)
+
+val darkOrangeColors = AppColors(
+    background = Color(0xFF1B1B21),
+    surface = Color(0xFF26262E),
+    surfaceHigh = Color(0xFF31313A),
+    border = Color(0xFF3C3C46),
+    textPrimary = Color(0xFFF2F2F5),
+    textSecondary = Color(0xFFAAAAB4),
+    textTertiary = Color(0xFF7F7F8A),
+    accent = Color(0xFFFF9F0A),
+    success = Color(0xFF32D74B),
+    onAccent = Color(0xFF201000),
+    shadow = Color(0x26000000),
+    error = Color(0xFFFF453A),
+)
+
+val darkPurpleColors = AppColors(
+    background = Color(0xFF1B1B21),
+    surface = Color(0xFF26262E),
+    surfaceHigh = Color(0xFF31313A),
+    border = Color(0xFF3C3C46),
+    textPrimary = Color(0xFFF2F2F5),
+    textSecondary = Color(0xFFAAAAB4),
+    textTertiary = Color(0xFF7F7F8A),
+    accent = Color(0xFFBF5AF2),
+    success = Color(0xFF32D74B),
+    onAccent = Color(0xFF1F0A2E),
+    shadow = Color(0x26000000),
+    error = Color(0xFFFF453A),
 )

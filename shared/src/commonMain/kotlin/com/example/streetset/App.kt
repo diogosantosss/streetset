@@ -13,10 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -32,18 +32,22 @@ import com.example.streetset.navigation.StatsRoute
 import com.example.streetset.navigation.Tab
 import com.example.streetset.presentation.programs.ProgramsScreen
 import com.example.streetset.presentation.settings.SettingsScreen
+import com.example.streetset.presentation.settings.SettingsViewModel
 import com.example.streetset.presentation.stats.StatsScreen
 import com.example.streetset.ui.components.BottomTabBar
 import com.example.streetset.ui.theme.AppTheme
-import com.example.streetset.ui.theme.AppTheme as ThemeEnum
 import com.example.streetset.ui.theme.LocalAppColors
+import dev.chrisbanes.haze.rememberHazeState
+import org.koin.compose.viewmodel.koinViewModel
 
 private const val TabTransitionDurationMillis = 300
 
 @Composable
-@Preview
 fun App() {
-    AppTheme(theme = ThemeEnum.Dark) {
+    val settingsViewModel: SettingsViewModel = koinViewModel()
+    val theme by settingsViewModel.theme.collectAsState()
+
+    AppTheme(theme = theme) {
         StreetSetApp()
     }
 }
@@ -55,6 +59,7 @@ private fun StreetSetApp(
     val colors = LocalAppColors.current
     val backStackEntry by navController.currentBackStackEntryAsState()
     val selectedTab = backStackEntry.toTab()
+    val hazeState = rememberHazeState()
 
     Box(
         modifier = Modifier
@@ -65,12 +70,12 @@ private fun StreetSetApp(
             navController = navController,
             startDestination = ProgramsRoute,
             modifier = Modifier.fillMaxSize(),
-            enterTransition = { tabTransition(direction = 1).enter },
-            exitTransition = { tabTransition(direction = 1).exit },
-            popEnterTransition = { tabTransition(direction = -1).enter },
-            popExitTransition = { tabTransition(direction = -1).exit },
+            enterTransition = { tabTransition(direction = tabDirection(initialState, targetState)).enter },
+            exitTransition = { tabTransition(direction = tabDirection(initialState, targetState)).exit },
+            popEnterTransition = { tabTransition(direction = tabDirection(initialState, targetState)).enter },
+            popExitTransition = { tabTransition(direction = tabDirection(initialState, targetState)).exit },
         ) {
-            composable<ProgramsRoute> { ProgramsScreen() }
+            composable<ProgramsRoute> { ProgramsScreen(hazeState = hazeState) }
             composable<StatsRoute> { StatsScreen() }
             composable<SettingsRoute> { SettingsScreen() }
         }
@@ -78,9 +83,10 @@ private fun StreetSetApp(
         BottomTabBar(
             selectedTab = selectedTab ?: Tab.Programs,
             onTabSelected = { tab -> navController.navigateToTab(tab) },
+            hazeState = hazeState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp, vertical = 12.dp)
+                .padding(horizontal = 24.dp)
                 .navigationBarsPadding(),
         )
     }
@@ -102,6 +108,12 @@ private fun NavBackStackEntry?.toTab(): Tab? {
         destination.hasRoute<SettingsRoute>() -> Tab.Settings
         else -> null
     }
+}
+
+private fun tabDirection(initial: NavBackStackEntry, target: NavBackStackEntry): Int {
+    val from = initial.toTab()?.ordinal ?: 0
+    val to = target.toTab()?.ordinal ?: 0
+    return if (to < from) -1 else 1
 }
 
 private data class TabTransition(

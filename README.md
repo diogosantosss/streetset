@@ -35,13 +35,13 @@ Completed sessions are stored as session logs and used to track training history
 
 ## Tech Stack
 
-| Technology | Purpose |
-|---|---|
-| Kotlin Multiplatform | Shared application logic |
+| Technology            | Purpose                          |
+|-----------------------|----------------------------------|
+| Kotlin Multiplatform  | Shared application logic         |
 | Compose Multiplatform | Shared UI across Android and iOS |
-| Room | Local database and persistence |
-| Koin | Dependency injection |
-| kotlinx-datetime | Date and time handling |
+| Room                  | Local database and persistence   |
+| Koin                  | Dependency injection             |
+| kotlinx-datetime      | Date and time handling           |
 
 ## Project Structure
 

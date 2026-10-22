@@ -4,13 +4,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.streetset.data.entities.Program
 import com.example.streetset.ui.theme.AppTheme
@@ -21,19 +27,22 @@ fun ProgramList(
     modifier: Modifier = Modifier,
     programs: List<Program>,
     onProgramClick: (Program) -> Unit,
-    header: @Composable (() -> Unit)? = null,
+    state: LazyListState = rememberLazyListState(),
+    topPadding: Dp = 16.dp,
 ) {
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 128.dp),
+        state = state,
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = topPadding + statusBarPadding,
+            bottom = 128.dp,
+        ),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (header != null) {
-            item(key = "header") {
-                header()
-            }
-        }
-
         items(programs, key = { it.id ?: it.hashCode() }) { program ->
             ProgramCard(
                 program = program,
@@ -58,7 +67,6 @@ private fun ProgramListPreview() {
                     Program(2, "Hypertrophy", "Muscle gain", LocalDate(2026, 11, 20), LocalDate(2026, 12, 17), 4),
                 ),
                 onProgramClick = {},
-                header = { ProgramsTitle() },
             )
         }
     }
