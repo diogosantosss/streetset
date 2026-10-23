@@ -29,19 +29,22 @@ private class AndroidThemePreferences(context: Context) : ThemePreferences {
 }
 
 private fun androidAppInfo(context: Context): AppInfo {
-    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+    val packageInfo = context
+        .packageManager
+        .getPackageInfo(context.packageName, 0)
 
     val lastUpdated = Instant.fromEpochMilliseconds(packageInfo.lastUpdateTime)
         .toLocalDateTime(TimeZone.currentSystemDefault())
         .date
         .fullDisplay()
 
-    val buildNumber = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        packageInfo.longVersionCode.toString()
-    } else {
-        @Suppress("DEPRECATION")
-        packageInfo.versionCode.toString()
-    }
+    val buildNumber: String =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageInfo.longVersionCode.toString()
+        } else {
+            @Suppress("DEPRECATION")
+            packageInfo.versionCode.toString()
+        }
 
     return AppInfo(
         name = "StreetSet",

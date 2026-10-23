@@ -27,6 +27,7 @@ fun ProgramList(
     modifier: Modifier = Modifier,
     programs: List<Program>,
     onProgramClick: (Program) -> Unit,
+    onProgramLongClick: (Program) -> Unit = onProgramClick,
     state: LazyListState = rememberLazyListState(),
     topPadding: Dp = 16.dp,
 ) {
@@ -46,7 +47,8 @@ fun ProgramList(
         items(programs, key = { it.id ?: it.hashCode() }) { program ->
             ProgramCard(
                 program = program,
-                onLongPress = { onProgramClick(program) }
+                onClick = { onProgramClick(program) },
+                onLongPress = { onProgramLongClick(program) },
             )
         }
     }

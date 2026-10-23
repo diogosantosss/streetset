@@ -19,6 +19,9 @@ interface WeekDao {
     @Insert
     suspend fun insert(week: Week): Long
 
+    @Query("DELETE FROM weeks WHERE programId = :programId")
+    suspend fun deleteByProgram(programId: Int)
+
     @Update
     suspend fun update(week: Week)
 

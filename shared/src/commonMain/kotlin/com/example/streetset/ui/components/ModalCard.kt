@@ -55,10 +55,12 @@ fun ModalCard(
 
     LaunchedEffect(visible) {
         if (visible) render = true
+
         progress.animateTo(
             targetValue = if (visible) 1f else 0f,
             animationSpec = tween(ModalAnimationDurationMillis),
         )
+
         if (!visible) render = false
     }
 

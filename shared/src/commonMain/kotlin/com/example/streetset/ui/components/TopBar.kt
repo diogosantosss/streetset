@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.composables.icons.lucide.ArrowLeft
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.example.streetset.ui.theme.AppTheme
@@ -75,13 +77,15 @@ fun TopBar(
     modifier: Modifier = Modifier,
     scrolled: Boolean = false,
     hazeState: HazeState? = null,
+    showBack: Boolean = false,
+    onBackClick: () -> Unit = {},
     actionIcon: ImageVector? = null,
     onActionClick: () -> Unit = {},
 ) {
     val colors = LocalAppColors.current
 
     val alignmentBias by animateFloatAsState(
-        targetValue = if (scrolled) 0f else -1f,
+        targetValue = if (scrolled || showBack) 0f else -1f,
         animationSpec = tween(240),
         label = "topBarTitleBias",
     )
@@ -115,26 +119,64 @@ fun TopBar(
                 .height(TopBarHeight),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = title,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.textPrimary,
-                textAlign = TextAlign.Start,
-                modifier = Modifier
-                    .align(BiasAlignment(horizontalBias = alignmentBias, verticalBias = 0f))
-                    .padding(horizontal = HorizontalPadding),
-            )
-
-            if (actionIcon != null) {
-                TopBarAction(
-                    imageVector = actionIcon,
-                    onClick = onActionClick,
+            if (showBack) {
+                Row(
                     modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(end = HorizontalPadding)
-                        .alpha(actionAlpha),
+                        .align(Alignment.CenterStart)
+                        .padding(start = HorizontalPadding)
+                        .clip(CircleShape)
+                        .background(colors.surfaceHigh.copy(alpha = 0.80f))
+                        .pointerInput(Unit) { detectTapGestures { onBackClick() } }
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Lucide.ArrowLeft,
+                        contentDescription = "Back",
+                        tint = colors.textPrimary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(
+                        text = "Back",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = colors.textPrimary,
+                        modifier = Modifier.padding(start = 6.dp),
+                    )
+                }
+                Text(
+                    text = title,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.textPrimary,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = 96.dp),
                 )
+            } else {
+                Text(
+                    text = title,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.textPrimary,
+                    textAlign = TextAlign.Start,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .align(BiasAlignment(horizontalBias = alignmentBias, verticalBias = 0f))
+                        .padding(horizontal = HorizontalPadding),
+                )
+                if (actionIcon != null) {
+                    TopBarAction(
+                        imageVector = actionIcon,
+                        onClick = onActionClick,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = HorizontalPadding)
+                            .alpha(actionAlpha),
+                    )
+                }
             }
         }
     }

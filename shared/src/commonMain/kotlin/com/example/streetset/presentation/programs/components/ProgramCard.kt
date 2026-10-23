@@ -41,6 +41,7 @@ import kotlinx.datetime.LocalDate
 @Composable
 fun ProgramCard(
     program: Program,
+    onClick: () -> Unit,
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -61,7 +62,7 @@ fun ProgramCard(
                 ),
             )
             .border(1.dp, colors.border.copy(alpha = 0.5f), shape)
-            .combinedClickable(onLongClick = onLongPress, onClick = {})
+            .combinedClickable(onClick = onClick, onLongClick = onLongPress)
             .padding(16.dp)
     ) {
         Row(
@@ -157,6 +158,7 @@ private fun ProgramCardPreview() {
                     endDate = LocalDate(2026, 11, 17),
                     weeksCount = 4,
                 ),
+                onClick = {},
                 onLongPress = {},
             )
         }

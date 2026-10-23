@@ -19,9 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.example.streetset.data.entities.Program
+import com.example.streetset.navigation.ProgramDetailRoute
 import com.example.streetset.presentation.programs.components.EmptyState
 import com.example.streetset.presentation.programs.components.ProgramFormSheet
 import com.example.streetset.presentation.programs.components.ProgramList
@@ -54,8 +56,9 @@ fun ProgramsScreenStructure(
 
 @Composable
 fun ProgramsScreen(
+    navController: NavHostController,
     programsViewModel: ProgramsViewModel = koinViewModel<ProgramsViewModel>(),
-    sheetViewModel : SheetViewModel = koinViewModel<SheetViewModel>(),
+    sheetViewModel: SheetViewModel = koinViewModel<SheetViewModel>(),
     hazeState: HazeState,
 ) {
     val programsState = programsViewModel.state.collectAsState().value
@@ -79,7 +82,11 @@ fun ProgramsScreen(
                             programs = programsState.programs,
                             hazeState = hazeState,
                             listState = listState,
-                            onProgramClick = sheetViewModel::showOptions,
+                            onProgramClick = { program ->
+                                val id = program.id ?: return@ProgramsScreenListContent
+                                navController.navigate(ProgramDetailRoute(id))
+                            },
+                            onProgramLongClick = sheetViewModel::showOptions,
                         )
                     }
                 }
@@ -174,10 +181,12 @@ private fun ProgramsScreenListContent(
     hazeState: HazeState,
     listState: LazyListState,
     onProgramClick: (Program) -> Unit,
+    onProgramLongClick: (Program) -> Unit,
 ) {
     ProgramList(
         programs = programs,
         onProgramClick = onProgramClick,
+        onProgramLongClick = onProgramLongClick,
         state = listState,
         topPadding = TopBarDefaults.Height + 16.dp,
         modifier = Modifier.hazeSource(hazeState),

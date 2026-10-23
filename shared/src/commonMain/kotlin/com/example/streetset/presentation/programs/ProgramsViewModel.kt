@@ -24,21 +24,7 @@ sealed interface ProgramsState {
 
     data class Success(
         val programs: List<Program>,
-        val sheet: Sheet = Sheet.None,
     ) : ProgramsState
-
-    sealed interface Sheet {
-        data object None : Sheet
-
-        data class Options(val program: Program) : Sheet
-
-        data class ConfirmDelete(val program: Program) : Sheet
-
-        data class Form(
-            val program: Program?,
-            val error: String? = null
-        ) : Sheet
-    }
 }
 
 class ProgramsViewModel : ViewModel(), KoinComponent {
@@ -48,19 +34,18 @@ class ProgramsViewModel : ViewModel(), KoinComponent {
     private val _state = MutableStateFlow<ProgramsState>(ProgramsState.Loading)
     val state: StateFlow<ProgramsState> = _state.asStateFlow()
 
-    private val sheet: ProgramsState.Sheet
-        get() = (_state.value as? ProgramsState.Success)?.sheet ?: ProgramsState.Sheet.None
-
     init {
         loadPrograms()
     }
 
     private fun loadPrograms() {
         viewModelScope.launch {
-            delay(4.seconds)
+            // simulate network response delay
+            delay(2.seconds)
+
             programDao.getAll()
                 .catch { throwable ->
-                    Napier.e("Failed to load programs", throwable)
+                    Napier.e("Failed to load programs", throwable, TAG)
                     _state.value = ProgramsState.Error("Loading programs failed")
                 }
                 .collect { programs ->
@@ -73,69 +58,6 @@ class ProgramsViewModel : ViewModel(), KoinComponent {
                     }
                 }
         }
-    }
-
-    private fun updateSheet(transform: (ProgramsState.Sheet) -> ProgramsState.Sheet) {
-        _state.update { curr ->
-            if (curr is ProgramsState.Success) curr.copy(sheet = transform(curr.sheet)) else curr
-        }
-    }
-
-    fun selectProgram(program: Program) =
-        updateSheet { ProgramsState.Sheet.Options(program) }
-
-    fun openCreateForm() =
-        updateSheet { ProgramsState.Sheet.Form(program = null) }
-
-    fun openEditForm(program: Program) =
-        updateSheet { ProgramsState.Sheet.Form(program = program) }
-
-    fun requestDelete(program: Program) =
-        updateSheet { ProgramsState.Sheet.ConfirmDelete(program) }
-
-    fun dismissSheet() =
-        updateSheet { ProgramsState.Sheet.None }
-
-    fun confirmDelete() {
-        val program = (sheet as? ProgramsState.Sheet.ConfirmDelete)?.program ?: return
-        viewModelScope.launch {
-            delay(2.seconds)
-            programDao.delete(program)
-            dismissSheet()
-        }
-    }
-
-    fun submitForm(input: ProgramInput) {
-        val form = sheet as? ProgramsState.Sheet.Form ?: return
-        if (!input.isValid) return
-
-        viewModelScope.launch {
-            val program = Program(
-                id = form.program?.id,
-                name = input.name.trim(),
-                goal = input.goal.trim().ifBlank { null },
-                startDate = input.startDate,
-                endDate = input.endDate,
-                weeksCount = (input.startDate.daysUntil(input.endDate) / 7).coerceAtLeast(1),
-            )
-
-            val existing = programDao.getByName(program.name)
-            if (existing != null && existing.id != program.id) {
-                setFormError("A program with this name already exists")
-                return@launch
-            }
-
-            if (form.program == null) programDao.insert(program)
-            else programDao.update(program)
-
-            dismissSheet()
-        }
-    }
-
-    fun clearFormError() = setFormError(null)
-
-    private fun setFormError(error: String?) {
-        updateSheet { if (it is ProgramsState.Sheet.Form) it.copy(error = error) else it }
     }
 
     companion object {

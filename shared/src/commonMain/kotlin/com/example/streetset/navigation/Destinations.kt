@@ -10,3 +10,9 @@ data object StatsRoute
 
 @Serializable
 data object SettingsRoute
+
+@Serializable
+data class ProgramDetailRoute(
+    val programId: Int,
+)
+
