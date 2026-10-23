@@ -103,7 +103,7 @@ class SheetViewModel : ViewModel(), KoinComponent {
                 return@launch
             }
 
-            delay(4.seconds)
+            delay(2.seconds)
             if (currentProgram == null) {
                 programDao.insert(program)
             } else {

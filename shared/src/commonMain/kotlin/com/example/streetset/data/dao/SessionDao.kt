@@ -13,6 +13,9 @@ interface SessionDao {
     @Query("SELECT * FROM sessions WHERE weekId = :weekId ORDER BY weekday")
     fun getByWeek(weekId: Int): Flow<List<Session>>
 
+    @Query("SELECT sessions.* FROM sessions INNER JOIN weeks ON sessions.weekId = weeks.id WHERE weeks.programId = :programId ORDER BY weeks.number, sessions.weekday")
+    fun getByProgram(programId: Int): Flow<List<Session>>
+
     @Query("SELECT * FROM sessions WHERE id = :id")
     suspend fun getById(id: Int): Session?
 

@@ -3,12 +3,16 @@ package com.example.streetset.presentation.programdetail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.streetset.data.dao.ProgramDao
+import com.example.streetset.data.dao.SessionLogDao
+import com.example.streetset.data.dao.SessionDao
 import com.example.streetset.data.dao.WeekDao
 import com.example.streetset.data.entities.Program
+import com.example.streetset.data.entities.Session
 import com.example.streetset.data.entities.Week
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -24,6 +28,8 @@ sealed interface ProgramDetailState {
     data class Success(
         val program: Program,
         val weeks: List<Week>,
+        val sessions: List<Session>,
+        val completedSessionIds: Set<Int>,
     ) : ProgramDetailState
 }
 
@@ -33,11 +39,11 @@ class ProgramDetailViewModel(
 
     private val programDao: ProgramDao by inject()
     private val weekDao: WeekDao by inject()
+    private val sessionDao: SessionDao by inject()
+    private val sessionLogDao: SessionLogDao by inject()
 
     private val _state = MutableStateFlow<ProgramDetailState>(ProgramDetailState.Loading)
     val state: StateFlow<ProgramDetailState> = _state.asStateFlow()
-
-    private var lastSyncedProgramHash: String? = null
 
     init {
         load()
@@ -51,20 +57,22 @@ class ProgramDetailViewModel(
                 return@launch
             }
 
-            weekDao.getByProgram(programId).collectLatest { weeks ->
-                val hash = "${program.startDate},${program.endDate},${program.weeksCount}"
-                if (lastSyncedProgramHash != hash) {
-                    lastSyncedProgramHash = hash
-                    syncWeeks(program, weeks)
-                    return@collectLatest
-                }
+            syncWeeks(program, weekDao.getByProgram(programId).first())
 
-                val currentProgram = programDao.getById(programId) ?: program
-                _state.value = ProgramDetailState.Success(
-                    program = currentProgram,
-                    weeks = weeks.sortedBy { it.number },
-                )
-            }
+            combine(
+                weekDao.getByProgram(programId),
+                sessionDao.getByProgram(programId),
+                sessionLogDao.getCompletedSessionIdsByProgram(programId),
+            ) { weeks, sessions, completedSessionIds -> Triple(weeks, sessions, completedSessionIds.toSet()) }
+                .collectLatest { (weeks, sessions, completedSessionIds) ->
+                    val currentProgram = programDao.getById(programId) ?: program
+                    _state.value = ProgramDetailState.Success(
+                        program = currentProgram,
+                        weeks = weeks.sortedBy { it.number },
+                        sessions = sessions,
+                        completedSessionIds = completedSessionIds,
+                    )
+                }
         }
     }
 

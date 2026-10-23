@@ -2,6 +2,8 @@ package com.example.streetset.di
 
 import com.example.streetset.data.DatabaseSeeder
 import com.example.streetset.presentation.programdetail.ProgramDetailViewModel
+import com.example.streetset.presentation.programdetail.CreateSessionViewModel
+import com.example.streetset.presentation.programdetail.SessionOptionsViewModel
 import com.example.streetset.presentation.programs.ProgramsViewModel
 import com.example.streetset.presentation.programs.SheetViewModel
 import com.example.streetset.presentation.settings.SettingsViewModel
@@ -22,6 +24,8 @@ val appModule = module {
     viewModelOf(::SheetViewModel)
     viewModelOf(::SettingsViewModel)
     viewModelOf(::ProgramDetailViewModel)
+    viewModelOf(::CreateSessionViewModel)
+    viewModelOf(::SessionOptionsViewModel)
 }
 
 fun initKoin(appDeclaration: KoinAppDeclaration = {}) {

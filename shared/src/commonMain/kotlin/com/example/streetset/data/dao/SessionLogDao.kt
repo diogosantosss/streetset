@@ -16,6 +16,9 @@ interface SessionLogDao {
     @Query("SELECT * FROM session_logs ORDER BY completedAt DESC")
     fun getAll(): Flow<List<SessionLog>>
 
+    @Query("SELECT DISTINCT session_logs.sessionId FROM session_logs INNER JOIN sessions ON sessions.id = session_logs.sessionId INNER JOIN weeks ON weeks.id = sessions.weekId WHERE weeks.programId = :programId")
+    fun getCompletedSessionIdsByProgram(programId: Int): Flow<List<Int>>
+
     @Insert
     suspend fun insert(log: SessionLog): Long
 
