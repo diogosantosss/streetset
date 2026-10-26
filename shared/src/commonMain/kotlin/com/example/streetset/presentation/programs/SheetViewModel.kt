@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.streetset.data.dao.ProgramDao
 import com.example.streetset.data.entities.Program
+import io.github.aakira.napier.Napier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.daysUntil
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.seconds
 
 sealed interface SheetState {
@@ -38,33 +40,31 @@ class SheetViewModel : ViewModel(), KoinComponent {
     private val _sheetState = MutableStateFlow<SheetState>(SheetState.None)
     val sheetState: StateFlow<SheetState> = _sheetState.asStateFlow()
 
+    private val isBusy: Boolean
+        get() = _sheetState.value.let { it is SheetState.Deleting || it is SheetState.Submitting }
+
     fun showOptions(program: Program) {
-        val current = _sheetState.value
-        if (current is SheetState.Deleting || current is SheetState.Submitting) return
+        if (isBusy) return
         _sheetState.value = SheetState.Options(program)
     }
 
     fun showCreateForm() {
-        val current = _sheetState.value
-        if (current is SheetState.Deleting || current is SheetState.Submitting) return
+        if (isBusy) return
         _sheetState.value = SheetState.Form(program = null)
     }
 
     fun showEditForm(program: Program) {
-        val current = _sheetState.value
-        if (current is SheetState.Deleting || current is SheetState.Submitting) return
+        if (isBusy) return
         _sheetState.value = SheetState.Form(program = program)
     }
 
     fun requestDelete(program: Program) {
-        val current = _sheetState.value
-        if (current is SheetState.Deleting || current is SheetState.Submitting) return
+        if (isBusy) return
         _sheetState.value = SheetState.ConfirmDelete(program)
     }
 
     fun dismiss() {
-        val current = _sheetState.value
-        if (current is SheetState.Deleting || current is SheetState.Submitting) return
+        if (isBusy) return
         _sheetState.value = SheetState.None
     }
 
@@ -73,9 +73,13 @@ class SheetViewModel : ViewModel(), KoinComponent {
         val program = current.program
         _sheetState.value = SheetState.Deleting(program)
         viewModelScope.launch {
-            delay(4.seconds)
-            programDao.delete(program)
-            _sheetState.value = SheetState.None
+            try {
+                programDao.delete(program)
+                _sheetState.value = SheetState.None
+            } catch (e: Exception) {
+                Napier.e("Failed to delete program", e)
+                _sheetState.value = SheetState.ConfirmDelete(program)
+            }
         }
     }
 

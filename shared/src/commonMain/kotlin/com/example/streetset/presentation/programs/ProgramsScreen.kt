@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
+import com.example.streetset.data.dao.ProgramSessionProgress
 import com.example.streetset.data.entities.Program
 import com.example.streetset.navigation.ProgramDetailRoute
 import com.example.streetset.presentation.programs.components.EmptyState
@@ -80,6 +81,7 @@ fun ProgramsScreen(
                     } else {
                         ProgramsScreenListContent(
                             programs = programsState.programs,
+                            sessionProgress = programsState.sessionProgress,
                             hazeState = hazeState,
                             listState = listState,
                             onProgramClick = { program ->
@@ -178,6 +180,7 @@ private fun ProgramsTopBar(
 @Composable
 private fun ProgramsScreenListContent(
     programs: List<Program>,
+    sessionProgress: Map<Int, ProgramSessionProgress>,
     hazeState: HazeState,
     listState: LazyListState,
     onProgramClick: (Program) -> Unit,
@@ -185,6 +188,7 @@ private fun ProgramsScreenListContent(
 ) {
     ProgramList(
         programs = programs,
+        sessionProgress = sessionProgress,
         onProgramClick = onProgramClick,
         onProgramLongClick = onProgramLongClick,
         state = listState,

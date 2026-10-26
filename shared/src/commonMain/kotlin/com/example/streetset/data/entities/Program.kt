@@ -10,6 +10,12 @@ import kotlinx.datetime.daysUntil
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
+enum class ProgramStatus {
+    PENDING,
+    IN_PROGRESS,
+    FINISHED,
+}
+
 @Entity(
     tableName = "programs",
     indices = [Index(value = ["name"], unique = true)],
@@ -35,3 +41,12 @@ fun Program.currentWeek(
     if (elapsed < 0) return 0
     return (elapsed / 7 + 1).coerceAtMost(total)
 }
+
+fun status(completedSessions: Int, totalSessions: Int): ProgramStatus = when {
+    completedSessions <= 0 -> ProgramStatus.PENDING
+    totalSessions in 1..completedSessions -> ProgramStatus.FINISHED
+    else -> ProgramStatus.IN_PROGRESS
+}
+
+fun Program.weeksLabel(): String? =
+    weeksCount?.let { if (it == 1) "1 week" else "$it weeks" }

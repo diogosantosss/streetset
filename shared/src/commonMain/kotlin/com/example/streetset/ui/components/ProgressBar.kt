@@ -11,7 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
@@ -20,27 +22,29 @@ import com.example.streetset.ui.theme.LocalAppColors
 fun ProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
+    height: Dp = 6.dp,
+    color: Color = LocalAppColors.current.accent,
+    trackColor: Color = LocalAppColors.current.surfaceHigh,
 ) {
-    val colors = LocalAppColors.current
-
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
         animationSpec = tween(durationMillis = 500),
     )
+    val barShape = RoundedCornerShape(height / 2)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(6.dp)
-            .clip(RoundedCornerShape(3.dp))
-            .background(colors.surfaceHigh)
+            .height(height)
+            .clip(barShape)
+            .background(trackColor)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth(fraction = animatedProgress)
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(colors.accent)
+                .height(height)
+                .clip(barShape)
+                .background(color)
         )
     }
 }

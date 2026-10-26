@@ -25,192 +25,170 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Calendar
 import com.composables.icons.lucide.ChevronRight
 import com.composables.icons.lucide.Clock
-import com.composables.icons.lucide.Dumbbell
 import com.composables.icons.lucide.Lucide
 import com.example.streetset.data.entities.Program
-import com.example.streetset.data.entities.currentWeek
+import com.example.streetset.data.entities.ProgramStatus
+import com.example.streetset.data.entities.status
+import com.example.streetset.data.entities.weeksLabel
 import com.example.streetset.ui.components.ProgressBar
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
 import kotlin.math.roundToInt
-import kotlin.time.Clock
-
-private enum class ProgramStatus {
-    PENDING,
-    IN_PROGRESS,
-    FINISHED,
-}
 
 @Composable
 fun ProgramCard(
+    modifier: Modifier = Modifier,
     program: Program,
+    completedSessions: Int = 0,
+    totalSessions: Int = 0,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
-    val shape = RoundedCornerShape(18.dp)
-    val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
-    val status = remember(program, today) { getProgramStatus(program, today) }
+    val shape = RoundedCornerShape(16.dp)
 
-    val totalSessions = program.weeksCount ?: 0
-    val doneSessions = if (totalSessions == 0) 0 else program.currentWeek(today).coerceIn(0, totalSessions)
-    val progress = if (totalSessions == 0) 0f else (doneSessions.toFloat() / totalSessions.toFloat())
+    val done = completedSessions.coerceIn(0, totalSessions)
+    val progress = if (totalSessions == 0) 0f else done.toFloat() / totalSessions.toFloat()
     val percentage = (progress * 100f).roundToInt()
-    val weeksLabel = if (totalSessions == 1) "1 week" else "$totalSessions weeks"
+
+    val status = remember(program, done, totalSessions) { status(done, totalSessions) }
+    val statusColor = status.color(colors.accent)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(6.dp, shape, ambientColor = Color.Black.copy(alpha = 0.4f), spotColor = Color.Black.copy(alpha = 0.4f))
+            .shadow(
+                4.dp,
+                shape,
+                ambientColor = Color.Black.copy(alpha = 0.3f),
+                spotColor = Color.Black.copy(alpha = 0.3f)
+            )
             .clip(shape)
             .background(
-                Brush.verticalGradient(
+                Brush.linearGradient(
                     colors = listOf(
-                        colors.surfaceHigh.copy(alpha = 0.98f),
-                        colors.surfaceHigh.copy(alpha = 0.92f),
+                        statusColor.copy(alpha = 0.10f).compositeOver(colors.surfaceHigh),
+                        colors.surfaceHigh,
                     ),
                 ),
             )
             .border(1.dp, colors.border.copy(alpha = 0.5f), shape)
-            .combinedClickable(onClick = onClick, onLongClick = onLongPress)
+            .combinedClickable(onClick = onClick, onLongClick = onLongPress),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(14.dp),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(end = 76.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(colors.accent.copy(alpha = 0.12f))
-                        .border(1.dp, colors.accent.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Lucide.Dumbbell,
-                        contentDescription = null,
-                        tint = colors.accent,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
+            Row(verticalAlignment = Alignment.Top) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = program.name,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = colors.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
+
                     program.goal?.let {
-                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = it,
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
                             color = colors.textSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 2.dp),
                         )
                     }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) {
+                        Icon(
+                            imageVector = Lucide.Calendar,
+                            contentDescription = null,
+                            tint = colors.textTertiary,
+                            modifier = Modifier.size(12.dp),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = program.formatDateRange(),
+                            fontSize = 11.sp,
+                            color = colors.textTertiary,
+                            maxLines = 1,
+                        )
+                        program.weeksLabel()?.let { label ->
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Icon(
+                                imageVector = Lucide.Clock,
+                                contentDescription = null,
+                                tint = colors.textTertiary,
+                                modifier = Modifier.size(12.dp),
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                color = colors.textTertiary,
+                                maxLines = 1,
+                            )
+                        }
+                    }
                 }
+
+                Spacer(modifier = Modifier.width(4.dp))
+                StatusPill(status = status, color = statusColor)
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(end = 28.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Lucide.Calendar,
-                    contentDescription = null,
-                    tint = colors.textTertiary,
-                    modifier = Modifier.size(14.dp),
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = program.formatDateRange(),
-                    fontSize = 12.sp,
-                    color = colors.textTertiary,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .height(12.dp)
-                        .width(1.dp)
-                        .background(colors.border.copy(alpha = 0.6f)),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Lucide.Clock,
-                    contentDescription = null,
-                    tint = colors.textTertiary,
-                    modifier = Modifier.size(14.dp),
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = weeksLabel,
-                    fontSize = 12.sp,
-                    color = colors.textTertiary,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
             Box(
                 modifier = Modifier
+                    .padding(top = 12.dp)
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(colors.border.copy(alpha = 0.4f)),
+                    .background(colors.textTertiary.copy(alpha = 0.15f)),
             )
-            Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = "$doneSessions/$totalSessions sessions",
-                    fontSize = 12.sp,
-                    color = colors.textSecondary,
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "$percentage%",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = colors.textPrimary,
-                )
-            }
+            Text(
+                text = "$done/$totalSessions sessions",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = colors.textSecondary,
+                modifier = Modifier.padding(top = 10.dp),
+            )
 
             if (totalSessions > 0) {
-                Spacer(modifier = Modifier.height(8.dp))
-                ProgressBar(progress = progress) // largura total
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 4.dp),
+                ) {
+                    ProgressBar(
+                        progress = progress,
+                        height = 3.dp,
+                        color = statusColor,
+                        trackColor = colors.border.copy(alpha = 0.5f),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "$percentage%",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = colors.textPrimary,
+                    )
+                }
             }
-        }
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp),
-        ) {
-            StatusPill(status = status)
         }
 
         Icon(
@@ -219,79 +197,45 @@ fun ProgramCard(
             tint = colors.textTertiary,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 16.dp)
+                .padding(end = 12.dp)
                 .size(18.dp),
         )
     }
 }
 
 @Composable
-private fun StatusPill(status: ProgramStatus) {
-    val colors = LocalAppColors.current
-
-    val (label, dotColor, bgColor, borderColor) = when (status) {
-        ProgramStatus.PENDING -> Quadruple(
-            "Pending",
-            Color(0xFFF59E0B),
-            Color(0xFFF59E0B).copy(alpha = 0.12f),
-            Color(0xFFF59E0B).copy(alpha = 0.35f),
-        )
-        ProgramStatus.IN_PROGRESS -> Quadruple(
-            "In progress",
-            colors.accent,
-            colors.accent.copy(alpha = 0.12f),
-            colors.accent.copy(alpha = 0.35f),
-        )
-        ProgramStatus.FINISHED -> Quadruple(
-            "Finished",
-            Color(0xFF22C55E),
-            Color(0xFF22C55E).copy(alpha = 0.12f),
-            Color(0xFF22C55E).copy(alpha = 0.35f),
-        )
+private fun StatusPill(status: ProgramStatus, color: Color) {
+    val label = when (status) {
+        ProgramStatus.PENDING -> "Pending"
+        ProgramStatus.IN_PROGRESS -> "In progress"
+        ProgramStatus.FINISHED -> "Finished"
     }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(bgColor)
-            .border(0.5.dp, borderColor, RoundedCornerShape(999.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+        modifier = Modifier.padding(top = 2.dp),
     ) {
         Box(
             modifier = Modifier
                 .size(5.dp)
                 .clip(CircleShape)
-                .background(dotColor),
+                .background(color),
         )
-        Spacer(modifier = Modifier.width(5.dp))
+        Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = label,
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium,
-            color = colors.textPrimary,
+            color = color,
+            maxLines = 1,
         )
     }
 }
 
-private data class Quadruple<A, B, C, D>(
-    val first: A,
-    val second: B,
-    val third: C,
-    val fourth: D,
-)
-
-private fun getProgramStatus(program: Program, today: LocalDate): ProgramStatus {
-    val start = program.startDate
-    val end = program.endDate
-    val total = program.weeksCount ?: 0
-    if (total == 0) return ProgramStatus.PENDING
-    if (start != null && today < start) return ProgramStatus.PENDING
-    if (end != null && today > end) return ProgramStatus.FINISHED
-    val current = program.currentWeek(today)
-    if (current >= total) return ProgramStatus.FINISHED
-    if (current <= 0) return ProgramStatus.PENDING
-    return ProgramStatus.IN_PROGRESS
+private fun ProgramStatus.color(accent: Color): Color = when (this) {
+    ProgramStatus.PENDING -> Color(0xFFF59E0B)
+    ProgramStatus.IN_PROGRESS -> accent
+    ProgramStatus.FINISHED -> Color(0xFF22C55E)
 }
 
 @Preview
@@ -313,6 +257,8 @@ private fun ProgramCardPreview() {
                     endDate = LocalDate(2026, 11, 17),
                     weeksCount = 4,
                 ),
+                completedSessions = 3,
+                totalSessions = 12,
                 onClick = {},
                 onLongPress = {},
             )
