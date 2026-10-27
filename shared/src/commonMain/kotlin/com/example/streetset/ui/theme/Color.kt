@@ -2,6 +2,32 @@ package com.example.streetset.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+/** Shared semantic palette for the training protocols shown throughout a session. */
+object TrainingProtocolColors {
+    val warmUp = Color(0xFFF59E0B)
+    val topSet = Color(0xFFEF4444)
+    val backOff = Color(0xFF60A5FA)
+    val superset = Color(0xFFA78BFA)
+    val circuit = Color(0xFF2DD4BF)
+    val hold = Color(0xFF22C55E)
+    val emom = Color(0xFFF472B6)
+    val metronome = Color(0xFFFB923C)
+
+    fun colorFor(protocol: String, accent: Color): Color = when (
+        protocol.lowercase().replace("_", "").replace("-", "").replace(" ", "")
+    ) {
+        "warmup" -> warmUp
+        "topset" -> topSet
+        "backoff" -> backOff
+        "superset" -> superset
+        "circuit" -> circuit
+        "hold" -> hold
+        "emom" -> emom
+        "metronome" -> metronome
+        else -> accent
+    }
+}
+
 data class AppColors(
     val background: Color,
     val surface: Color,

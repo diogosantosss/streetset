@@ -16,6 +16,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import com.example.streetset.navigation.ProgramDetailRoute
 import com.example.streetset.navigation.ProgramsRoute
+import com.example.streetset.navigation.SessionDetailRoute
 import com.example.streetset.navigation.SettingsRoute
 import com.example.streetset.navigation.StatsRoute
 import com.example.streetset.navigation.Tab
@@ -35,7 +36,8 @@ object StreetSetNav {
     }
 
     fun NavBackStackEntry?.isDetail(): Boolean =
-        this?.destination?.hasRoute<ProgramDetailRoute>() == true
+        this?.destination?.hasRoute<ProgramDetailRoute>() == true ||
+            this?.destination?.hasRoute<SessionDetailRoute>() == true
 
     fun NavBackStackEntry?.toTab(): Tab? = when {
         this == null -> null
@@ -62,24 +64,19 @@ object StreetSetNav {
 
     // Tabs transitions
     val enter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-        if (enteringDetail()) {
-            slideInHorizontally(
+        when {
+            enteringDetail() || enteringDetailFromDetail() -> slideInHorizontally(
                 initialOffsetX = { it },
                 animationSpec = tween(TabTransitionDurationMillis),
             )
-        } else {
-            tabTransition(tabDirection()).enter
+            else -> tabTransition(tabDirection()).enter
         }
     }
 
     val exit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         when {
-            enteringDetail() -> slideOutHorizontally(
+            enteringDetail() || enteringDetailFromDetail() -> slideOutHorizontally(
                 targetOffsetX = { -it / 4 },
-                animationSpec = tween(TabTransitionDurationMillis),
-            )
-            leavingDetail() -> slideOutHorizontally(
-                targetOffsetX = { it },
                 animationSpec = tween(TabTransitionDurationMillis),
             )
             else -> tabTransition(tabDirection()).exit
@@ -87,24 +84,30 @@ object StreetSetNav {
     }
 
     val popEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-        if (leavingDetail()) {
-            slideInHorizontally(
+        when {
+            leavingDetail() -> slideInHorizontally(
                 initialOffsetX = { -it / 4 },
                 animationSpec = tween(TabTransitionDurationMillis),
             )
-        } else {
-            tabTransition(tabDirection()).enter
+            returningFromDetail() -> slideInHorizontally(
+                initialOffsetX = { -it / 4 },
+                animationSpec = tween(TabTransitionDurationMillis),
+            )
+            else -> tabTransition(-tabDirection()).enter
         }
     }
 
     val popExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-        if (leavingDetail()) {
-            slideOutHorizontally(
+        when {
+            leavingDetail() -> slideOutHorizontally(
                 targetOffsetX = { it },
                 animationSpec = tween(TabTransitionDurationMillis),
             )
-        } else {
-            tabTransition(tabDirection()).exit
+            returningFromDetail() -> slideOutHorizontally(
+                targetOffsetX = { it },
+                animationSpec = tween(TabTransitionDurationMillis),
+            )
+            else -> tabTransition(-tabDirection()).exit
         }
     }
 
@@ -112,8 +115,15 @@ object StreetSetNav {
     private fun AnimatedContentTransitionScope<NavBackStackEntry>.enteringDetail() =
         !initialState.isDetail() && targetState.isDetail()
 
+    private fun AnimatedContentTransitionScope<NavBackStackEntry>.enteringDetailFromDetail() =
+        initialState.isDetail() && targetState.isDetail() && initialState.destination.route != targetState.destination.route
+
     private fun AnimatedContentTransitionScope<NavBackStackEntry>.leavingDetail() =
         initialState.isDetail() && !targetState.isDetail()
+
+    private fun AnimatedContentTransitionScope<NavBackStackEntry>.returningFromDetail() =
+        initialState.isDetail() && targetState.isDetail() && initialState.destination.route != targetState.destination.route
+
 
     private fun AnimatedContentTransitionScope<NavBackStackEntry>.tabDirection(): Int {
         val from = initialState.tabOrPrograms()?.ordinal ?: 0

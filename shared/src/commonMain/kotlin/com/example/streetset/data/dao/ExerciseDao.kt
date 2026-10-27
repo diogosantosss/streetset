@@ -19,6 +19,9 @@ interface ExerciseDao {
     @Query("SELECT * FROM exercises WHERE muscleGroup = :muscleGroup")
     fun getByMuscleGroup(muscleGroup: String): Flow<List<Exercise>>
 
+    @Query("SELECT * FROM exercises WHERE name = :name COLLATE NOCASE LIMIT 1")
+    suspend fun getByName(name: String): Exercise?
+
     @Insert
     suspend fun insert(exercise: Exercise): Long
 

@@ -16,3 +16,9 @@ data class ProgramDetailRoute(
     val programId: Int,
 )
 
+@Serializable
+data class SessionDetailRoute(
+    val sessionId: Int,
+    val title: String,
+)
+

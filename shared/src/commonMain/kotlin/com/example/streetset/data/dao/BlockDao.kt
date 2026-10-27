@@ -19,6 +19,9 @@ interface BlockDao {
     @Query("SELECT * FROM blocks WHERE parentId = :parentId ORDER BY position")
     fun getByParent(parentId: Int): Flow<List<Block>>
 
+    @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM blocks WHERE sessionId = :sessionId AND parentId IS NULL")
+    suspend fun nextPosition(sessionId: Int): Int
+
     @Insert
     suspend fun insert(block: Block): Long
 
@@ -27,4 +30,7 @@ interface BlockDao {
 
     @Delete
     suspend fun delete(block: Block)
+
+    @Query("DELETE FROM blocks WHERE parentId = :parentId")
+    suspend fun deleteChildren(parentId: Int)
 }

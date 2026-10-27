@@ -86,7 +86,7 @@ fun ProgramSessionBottomBar(
                 text = if (isComplete) {
                     "Program complete"
                 } else {
-                    "Week ${nextWeek?.number ?: "—"}  |  ${nextSession?.name.orEmpty()}"
+                    "Week ${nextWeek?.number ?: "—"}  |  ${nextSession.name}"
                 },
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,

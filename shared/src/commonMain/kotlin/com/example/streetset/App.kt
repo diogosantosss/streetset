@@ -23,11 +23,13 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.streetset.navigation.ProgramDetailRoute
 import com.example.streetset.navigation.ProgramsRoute
+import com.example.streetset.navigation.SessionDetailRoute
 import com.example.streetset.navigation.SettingsRoute
 import com.example.streetset.navigation.StatsRoute
 import com.example.streetset.navigation.Tab
 import com.example.streetset.presentation.programdetail.ProgramDetailScreen
 import com.example.streetset.presentation.programs.ProgramsScreen
+import com.example.streetset.presentation.sessiondetail.SessionDetailScreen
 import com.example.streetset.presentation.settings.SettingsScreen
 import com.example.streetset.presentation.settings.SettingsViewModel
 import com.example.streetset.presentation.stats.StatsScreen
@@ -86,6 +88,18 @@ private fun StreetSetApp(
                 ProgramDetailScreen(
                     programId = route.programId,
                     onBack = { navController.popBackStack() },
+                    hazeState = hazeState,
+                    onSessionClick = { session ->
+                        navController.navigate(SessionDetailRoute(sessionId = session.id ?: 0, title = session.name))
+                    },
+                )
+            }
+            composable<SessionDetailRoute> { entry: NavBackStackEntry ->
+                val route = entry.toRoute<SessionDetailRoute>()
+                SessionDetailScreen(
+                    navController = navController,
+                    sessionId = route.sessionId,
+                    title = route.title,
                     hazeState = hazeState,
                 )
             }
