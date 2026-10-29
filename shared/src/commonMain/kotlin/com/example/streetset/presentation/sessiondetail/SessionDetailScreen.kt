@@ -31,6 +31,12 @@ import com.example.streetset.ui.components.TopBarDefaults
 import com.example.streetset.ui.theme.LocalAppColors
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import com.example.streetset.navigation.TrainingSessionRoute
+import com.example.streetset.presentation.sessiondetail.components.SessionDetailBottomBar
+import com.example.streetset.ui.components.BOTTOM_BAR_HEIGTH
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -40,7 +46,7 @@ fun SessionDetailScreen(
     sessionId: Int,
     title: String,
     hazeState: HazeState,
-    blocksViewModel: SessionBlocksViewModel = koinViewModel<SessionBlocksViewModel> { parametersOf(sessionId) } ,
+    blocksViewModel: SessionBlocksViewModel = koinViewModel<SessionBlocksViewModel> { parametersOf(sessionId) },
     addBlockViewModel: AddBlockViewModel = koinViewModel<AddBlockViewModel> { parametersOf(sessionId) },
     optionsViewModel: BlockOptionsViewModel = koinViewModel<BlockOptionsViewModel>(),
 ) {
@@ -67,7 +73,7 @@ fun SessionDetailScreen(
                 start = 16.dp,
                 end = 16.dp,
                 top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + TopBarDefaults.Height + 16.dp,
-                bottom = 32.dp,
+                bottom = BOTTOM_BAR_HEIGTH,
             ),
             verticalArrangement = Arrangement.spacedBy(20.dp),
             modifier = Modifier
@@ -121,9 +127,28 @@ fun SessionDetailScreen(
             onBackClick = { navController.popBackStack() },
             modifier = Modifier.align(Alignment.TopCenter),
         )
+
+        SessionDetailBottomBar(
+            title = title,
+            hazeState = hazeState,
+            isVisible = isSuccess,
+            onStartClick = {
+                navController.navigate(TrainingSessionRoute(sessionId = sessionId, title = title))
+            },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp)
+                .navigationBarsPadding(),
+        )
+
     }
 
-    BlockOptionsSheets(state = optionsState, viewModel = optionsViewModel, addBlockViewModel = addBlockViewModel, blocksState = blocksState)
+    BlockOptionsSheets(
+        state = optionsState,
+        viewModel = optionsViewModel,
+        addBlockViewModel = addBlockViewModel,
+        blocksState = blocksState
+    )
 }
 
 @Composable

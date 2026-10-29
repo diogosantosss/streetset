@@ -1,0 +1,186 @@
+package com.example.streetset.presentation.training
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.streetset.presentation.training.components.CurrentSetPhase
+import com.example.streetset.presentation.training.components.FinishedPhase
+import com.example.streetset.presentation.training.components.RestPhase
+import com.example.streetset.presentation.training.components.TrainingBottomBar
+import com.example.streetset.presentation.training.components.UpcomingList
+import com.example.streetset.presentation.training.components.UpcomingRow
+import com.example.streetset.ui.components.BOTTOM_BAR_HEIGTH
+import com.example.streetset.ui.components.ConfirmSheet
+import com.example.streetset.ui.components.TopBar
+import com.example.streetset.ui.components.TopBarDefaults
+import com.example.streetset.ui.theme.LocalAppColors
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
+
+@Composable
+fun TrainingSessionScreen(
+    sessionId: Int,
+    title: String,
+    hazeState: HazeState,
+    onBack: () -> Unit,
+    viewModel: TrainingSessionViewModel = koinViewModel { parametersOf(sessionId) },
+) {
+    val colors = LocalAppColors.current
+    val uiState by viewModel.uiState.collectAsState()
+    val restSecondsLeft by viewModel.restSecondsLeft.collectAsState()
+
+    var showExitConfirm by remember { mutableStateOf(false) }
+
+    val listState = rememberLazyListState()
+
+    val scrolled by remember {
+        derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0 }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colors.background),
+    ) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(state = hazeState)
+                .statusBarsPadding()
+                .padding(horizontal = 24.dp),
+            contentPadding = PaddingValues(
+                top = TopBarDefaults.Height + 16.dp,
+                bottom = BOTTOM_BAR_HEIGTH,
+            ),
+        ) {
+            val current = uiState.currentStep
+            val upcoming = uiState.upcomingSteps
+
+            item {
+                AnimatedContent(
+                    targetState = uiState.phase,
+                    transitionSpec = {
+                        (fadeIn(tween(260)) + slideInVertically(tween(260), initialOffsetY = { it / 14 })).togetherWith(
+                            fadeOut(tween(200)) + slideOutVertically(tween(200), targetOffsetY = { -it / 14 }),
+                        )
+                    },
+                    label = "training_phase",
+                ) { phase ->
+                    when (phase) {
+                        is TrainingPhase.Rest -> {
+                            RestPhase(
+                                restSecondsLeft = restSecondsLeft,
+                                restEndsAtMillis = phase.restEndsAtMillis,
+                            )
+                        }
+                        is TrainingPhase.Working, TrainingPhase.Loading -> {
+                            if (current != null) {
+                                CurrentSetPhase(step = current)
+                            }
+                        }
+                        TrainingPhase.Finished -> {
+                            FinishedPhase()
+                        }
+                    }
+                }
+            }
+
+            if (upcoming.isNotEmpty() && uiState.phase !is TrainingPhase.Finished) {
+                item(key = "up_next_header") {
+                    Text(
+                        text = "UP NEXT",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.8.sp,
+                        color = colors.textTertiary,
+                        modifier = Modifier.padding(top = 40.dp, bottom = 4.dp),
+                    )
+                }
+                itemsIndexed(
+                    items = upcoming,
+                    key = { _, step -> "up_${step.blockWithSets.block.id ?: 0}_${step.set.id ?: step.setIndex}_${step.setIndex}" },
+                ) { index, step ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateItem(
+                                fadeInSpec = tween(220),
+                                fadeOutSpec = tween(180),
+                                placementSpec = tween(220),
+                            ),
+                    ) {
+                        UpcomingRow(step = step, showDivider = index > 0)
+                    }
+                }
+            }
+        }
+
+        TopBar(
+            title = uiState.sessionTimer,
+            showBack = true,
+            onBackClick = { showExitConfirm = true },
+            hazeState = hazeState,
+            scrolled = scrolled,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
+
+        if (uiState.phase !is TrainingPhase.Finished) {
+            TrainingBottomBar(
+                isSessionPaused = uiState.sessionPaused,
+                actionText = if (uiState.phase is TrainingPhase.Rest) "Skip rest" else "Complete set",
+                onPauseClick = viewModel::togglePause,
+                onActionClick = viewModel::onPrimaryAction,
+                hazeState = hazeState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 24.dp)
+                    .navigationBarsPadding(),
+            )
+        }
+    }
+
+    ConfirmSheet(
+        visible = showExitConfirm,
+        title = "Leave training?",
+        message = "You'll lose your current training session progress if you leave now.",
+        confirmText = "Leave",
+        isDestructive = true,
+        onConfirm = {
+            showExitConfirm = false
+            onBack()
+        },
+        onDismiss = { showExitConfirm = false },
+    )
+}
+

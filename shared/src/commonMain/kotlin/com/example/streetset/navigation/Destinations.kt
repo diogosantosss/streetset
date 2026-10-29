@@ -22,3 +22,9 @@ data class SessionDetailRoute(
     val title: String,
 )
 
+@Serializable
+data class TrainingSessionRoute(
+    val sessionId: Int,
+    val title: String,
+)
+

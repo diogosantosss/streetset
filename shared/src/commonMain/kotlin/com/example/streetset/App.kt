@@ -27,12 +27,14 @@ import com.example.streetset.navigation.SessionDetailRoute
 import com.example.streetset.navigation.SettingsRoute
 import com.example.streetset.navigation.StatsRoute
 import com.example.streetset.navigation.Tab
+import com.example.streetset.navigation.TrainingSessionRoute
 import com.example.streetset.presentation.programdetail.ProgramDetailScreen
 import com.example.streetset.presentation.programs.ProgramsScreen
 import com.example.streetset.presentation.sessiondetail.SessionDetailScreen
 import com.example.streetset.presentation.settings.SettingsScreen
 import com.example.streetset.presentation.settings.SettingsViewModel
 import com.example.streetset.presentation.stats.StatsScreen
+import com.example.streetset.presentation.training.TrainingSessionScreen
 import com.example.streetset.ui.components.BottomTabBar
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
@@ -101,6 +103,15 @@ private fun StreetSetApp(
                     sessionId = route.sessionId,
                     title = route.title,
                     hazeState = hazeState,
+                )
+            }
+            composable<TrainingSessionRoute> { entry: NavBackStackEntry ->
+                val route = entry.toRoute<TrainingSessionRoute>()
+                TrainingSessionScreen(
+                    sessionId = route.sessionId,
+                    title = route.title,
+                    hazeState = hazeState,
+                    onBack = { navController.popBackStack() },
                 )
             }
         }

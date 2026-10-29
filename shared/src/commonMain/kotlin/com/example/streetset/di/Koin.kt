@@ -11,6 +11,7 @@ import com.example.streetset.presentation.sessiondetail.BlockOptionsViewModel
 import com.example.streetset.presentation.sessiondetail.SessionBlocksViewModel
 import com.example.streetset.presentation.settings.SettingsViewModel
 import com.example.streetset.presentation.settings.ThemeRepository
+import com.example.streetset.presentation.training.TrainingSessionViewModel
 import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModel
@@ -33,6 +34,7 @@ val appModule = module {
     viewModel { (sessionId: Int) -> SessionBlocksViewModel(sessionId) }
     viewModel { (sessionId: Int) -> AddBlockViewModel(sessionId) }
     viewModelOf(::BlockOptionsViewModel)
+    viewModel { (sessionId: Int) -> TrainingSessionViewModel(sessionId) }
 }
 
 fun initKoin(appDeclaration: KoinAppDeclaration = {}) {

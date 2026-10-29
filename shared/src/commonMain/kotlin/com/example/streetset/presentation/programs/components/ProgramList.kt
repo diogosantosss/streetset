@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.streetset.data.entities.Program
 import com.example.streetset.data.dao.ProgramSessionProgress
+import com.example.streetset.ui.components.BOTTOM_BAR_HEIGTH
 import com.example.streetset.ui.theme.AppTheme
 import kotlinx.datetime.LocalDate
 
@@ -42,7 +43,7 @@ fun ProgramList(
             start = 16.dp,
             end = 16.dp,
             top = topPadding + statusBarPadding,
-            bottom = 128.dp,
+            bottom = BOTTOM_BAR_HEIGTH,
         ),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {

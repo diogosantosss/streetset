@@ -31,6 +31,7 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Play
 import com.example.streetset.data.entities.Session
 import com.example.streetset.data.entities.Week
+import com.example.streetset.ui.components.BottomBar
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.components.topFade
 import com.example.streetset.ui.theme.LocalAppColors
@@ -43,44 +44,20 @@ import dev.chrisbanes.haze.blur.materials.HazeMaterials
 
 @Composable
 fun ProgramSessionBottomBar(
+    modifier: Modifier = Modifier,
+    hazeState: HazeState,
+    isVisible: Boolean = true,
     nextSession: Session?,
     nextWeek: Week?,
     completedCount: Int,
     totalCount: Int,
-    hazeState: HazeState,
-    modifier: Modifier = Modifier,
 ) {
     if (totalCount == 0) return
 
     val colors = LocalAppColors.current
     val isComplete = nextSession == null
-    val shape = RoundedCornerShape(28.dp)
-    val isLightBackground = colors.background.luminance() > 0.5f
-    val material = if (isLightBackground) {
-        HazeMaterials.thin(colors.surface)
-    } else {
-        HazeMaterials.thin(colors.background)
-    }
-    val blurStyle = material.then { progressive(HazeProgressive.topFade()) }
-    val overlayColor = if (isLightBackground) {
-        colors.surface.copy(alpha = 0.72f)
-    } else {
-        colors.surfaceHigh.copy(alpha = 0.45f)
-    }
-    val shadowColor = if (isLightBackground) colors.shadow else Color.Black
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(16.dp, shape, clip = false, ambientColor = shadowColor, spotColor = shadowColor)
-            .clip(shape)
-            .hazeBlur(input = HazeInput.Backdrop(hazeState), style = blurStyle)
-            .background(overlayColor)
-            .border(1.dp, colors.border.copy(alpha = 0.5f), shape)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
+    BottomBar(modifier, hazeState, isVisible) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 text = if (isComplete) {

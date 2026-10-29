@@ -45,10 +45,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Activity
 import com.composables.icons.lucide.Clock
+import com.composables.icons.lucide.Dumbbell
 import com.composables.icons.lucide.Gauge
 import com.composables.icons.lucide.Hourglass
 import com.composables.icons.lucide.Lucide
@@ -113,7 +115,7 @@ fun StandardBlockSection(
         block = item.block,
         title = item.exerciseName,
         isBusy = isBusy,
-        footer = metaLine(item.block),
+        footer = metaItems(item.block),
         modifier = modifier,
         onClick = onClick,
         onLongClick = onLongClick,
@@ -140,7 +142,7 @@ fun GroupBlockSection(
         block = block,
         title = null,
         isBusy = isBusy,
-        footer = block.rpe?.let { "RPE $it" },
+        footer = block.rpe?.let { listOf(MetaItem(Lucide.Gauge, "RPE $it")) }.orEmpty(),
         modifier = modifier,
         onClick = onClick,
         onLongClick = onLongClick,
@@ -248,13 +250,13 @@ fun HoldBlockSection(
         block = item.block,
         title = item.exerciseName,
         isBusy = isBusy,
-        footer = metaLine(item.block),
+        footer = metaItems(item.block),
         modifier = modifier,
         onClick = onClick,
         onLongClick = onLongClick,
     ) {
         item.block.holdSeconds?.let {
-            HeroRow(value = formatSeconds(it), label = "HOLD PER REP", color = color)
+            HeroRow(Lucide.Hourglass, formatSeconds(it), "HOLD PER REP", color)
             InsetDivider()
         }
         SetRows(item.sets)
@@ -277,13 +279,13 @@ fun EmomBlockSection(
         block = item.block,
         title = item.exerciseName,
         isBusy = isBusy,
-        footer = metaLine(item.block, includeRest = false),
+        footer = metaItems(item.block, includeRest = false),
         modifier = modifier,
         onClick = onClick,
         onLongClick = onLongClick,
     ) {
         if (totalMinutes > 0) {
-            HeroRow(value = "$totalMinutes min", label = "EVERY MINUTE ON THE MINUTE", color = color)
+            HeroRow(Lucide.Clock, "$totalMinutes min", "EVERY MINUTE ON THE MINUTE", color)
             InsetDivider()
         }
         SetRows(item.sets) { set -> set.minutes?.let { "$it min" } ?: "Set ${set.setNumber}" }
@@ -305,13 +307,13 @@ fun MetronomeBlockSection(
         block = item.block,
         title = item.exerciseName,
         isBusy = isBusy,
-        footer = metaLine(item.block),
+        footer = metaItems(item.block),
         modifier = modifier,
         onClick = onClick,
         onLongClick = onLongClick,
     ) {
         item.block.bpm?.let {
-            HeroRow(value = "$it", label = "BPM", color = color)
+            HeroRow(Lucide.Activity, "$it", "BPM", color)
             InsetDivider()
         }
         SetRows(item.sets)
@@ -427,7 +429,7 @@ private fun SectionFrame(
     block: Block,
     title: String?,
     isBusy: Boolean,
-    footer: String?,
+    footer: List<MetaItem> = emptyList(),
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
@@ -500,12 +502,10 @@ private fun SectionFrame(
             content = content,
         )
 
-        if (!footer.isNullOrBlank()) {
-            Text(
-                text = footer,
-                fontSize = 12.sp,
-                color = colors.textTertiary,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+        if (footer.isNotEmpty()) {
+            MetaFooter(
+                items = footer,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp),
             )
         }
     }
@@ -531,19 +531,18 @@ private fun SetRows(
                 color = colors.textPrimary,
             )
             Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = setSummary(set),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = colors.textSecondary,
-            )
+            SetValues(set)
         }
         if (index < sets.lastIndex) InsetDivider()
     }
 }
 
 @Composable
-private fun HeroRow(value: String, label: String, color: Color) {
+private fun HeroRow(
+    icon: ImageVector,
+    value: String, label:
+    String, color: Color
+) {
     val colors = LocalAppColors.current
 
     Column(
@@ -558,13 +557,22 @@ private fun HeroRow(value: String, label: String, color: Color) {
             fontWeight = FontWeight.SemiBold,
             color = color,
         )
-        Text(
-            text = label,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            letterSpacing = 0.8.sp,
-            color = colors.textSecondary,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(11.dp),
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = label,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.8.sp,
+                color = colors.textSecondary,
+            )
+        }
     }
 }
 
@@ -580,6 +588,19 @@ private fun InsetDivider(start: Dp = 16.dp) {
 }
 
 // Helpers
+private data class MetaItem(val icon: ImageVector, val text: String)
+
+private fun metaItems(block: Block, includeRest: Boolean = true): List<MetaItem> = listOfNotNull(
+    if (includeRest && block.restSeconds > 0) MetaItem(Lucide.Timer, "${formatSeconds(block.restSeconds)} rest") else null,
+    block.rpe?.let { MetaItem(Lucide.Gauge, "RPE $it") },
+)
+
+private fun formatLoad(raw: String?): String? {
+    val load = raw?.trim().orEmpty()
+    if (load.isEmpty()) return null
+    return if (load.replace(",", ".").toDoubleOrNull() != null) "$load kg" else load
+}
+
 private fun setSummary(set: PlannedSet): String {
     val parts = listOfNotNull(set.repsText?.let { "$it reps" }, set.loadText)
     return if (parts.isEmpty()) "-" else parts.joinToString("  ·  ")
@@ -616,6 +637,86 @@ private fun formatSeconds(total: Int): String {
         minutes == 0 -> "${seconds}s"
         seconds == 0 -> "${minutes}min"
         else -> "${minutes}m ${seconds}s"
+    }
+}
+
+@Composable
+private fun IconValue(
+    icon: ImageVector,
+    text: String,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 14.sp,
+    fontWeight: FontWeight = FontWeight.Medium,
+    valueColor: Color = LocalAppColors.current.textSecondary,
+    iconTint: Color = LocalAppColors.current.textTertiary,
+    iconSize: Dp = 13.dp,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(iconSize),
+        )
+        Spacer(modifier = Modifier.width(5.dp))
+        Text(
+            text = text,
+            fontSize = fontSize,
+            fontWeight = fontWeight,
+            color = valueColor,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun SetValues(
+    set: PlannedSet,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 14.sp,
+) {
+    val reps = set.repsText?.trim().takeUnless { it.isNullOrEmpty() }
+    val load = formatLoad(set.loadText)
+
+    if (reps == null && load == null) {
+        Text(
+            text = "-",
+            fontSize = fontSize,
+            color = LocalAppColors.current.textTertiary,
+            modifier = modifier,
+        )
+        return
+    }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier,
+    ) {
+        reps?.let { IconValue(Lucide.Repeat, it, fontSize = fontSize) }
+        load?.let { IconValue(Lucide.Dumbbell, it, fontSize = fontSize) }
+    }
+}
+
+@Composable
+private fun MetaFooter(items: List<MetaItem>, modifier: Modifier = Modifier) {
+    val colors = LocalAppColors.current
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier,
+    ) {
+        items.forEach { item ->
+            IconValue(
+                icon = item.icon,
+                text = item.text,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Normal,
+                valueColor = colors.textTertiary,
+                iconSize = 12.dp,
+            )
+        }
     }
 }
 

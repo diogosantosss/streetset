@@ -20,6 +20,7 @@ import com.example.streetset.navigation.SessionDetailRoute
 import com.example.streetset.navigation.SettingsRoute
 import com.example.streetset.navigation.StatsRoute
 import com.example.streetset.navigation.Tab
+import com.example.streetset.navigation.TrainingSessionRoute
 
 
 private const val TabTransitionDurationMillis = 300
@@ -37,7 +38,8 @@ object StreetSetNav {
 
     fun NavBackStackEntry?.isDetail(): Boolean =
         this?.destination?.hasRoute<ProgramDetailRoute>() == true ||
-            this?.destination?.hasRoute<SessionDetailRoute>() == true
+        this?.destination?.hasRoute<SessionDetailRoute>() == true ||
+        this?.destination?.hasRoute<TrainingSessionRoute>() == true
 
     fun NavBackStackEntry?.toTab(): Tab? = when {
         this == null -> null
