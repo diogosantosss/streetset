@@ -14,7 +14,7 @@ fun TrainingBlockDraft.toBlock(
     position: Int,
     exerciseId: Int?,
 ): Block {
-    val usesRest = protocol != TrainingProtocol.EMOM && !protocol.isGroup
+    val usesRest = !protocol.isGroup && protocol != TrainingProtocol.HOLD
 
     return Block(
         sessionId = sessionId,

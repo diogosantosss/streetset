@@ -22,8 +22,8 @@ import com.example.streetset.navigation.StatsRoute
 import com.example.streetset.navigation.Tab
 import com.example.streetset.navigation.TrainingSessionRoute
 
-
-private const val TabTransitionDurationMillis = 300
+private const val TabTransitionDurationMillis = 280
+private const val DetailTransitionDurationMillis = 220
 
 object StreetSetNav {
 
@@ -32,14 +32,14 @@ object StreetSetNav {
         navigate(tab.route) {
             popUpTo(graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
-            restoreState = true
+            restoreState = false
         }
     }
 
     fun NavBackStackEntry?.isDetail(): Boolean =
         this?.destination?.hasRoute<ProgramDetailRoute>() == true ||
-        this?.destination?.hasRoute<SessionDetailRoute>() == true ||
-        this?.destination?.hasRoute<TrainingSessionRoute>() == true
+                this?.destination?.hasRoute<SessionDetailRoute>() == true ||
+                this?.destination?.hasRoute<TrainingSessionRoute>() == true
 
     fun NavBackStackEntry?.toTab(): Tab? = when {
         this == null -> null
@@ -51,7 +51,6 @@ object StreetSetNav {
 
     fun NavBackStackEntry?.tabOrPrograms(): Tab? =
         toTab() ?: if (isDetail()) Tab.Programs else null
-
 
     // Bottom bar transitions
     val bottomBarEnter: EnterTransition = slideInVertically(
@@ -69,47 +68,63 @@ object StreetSetNav {
         when {
             enteringDetail() || enteringDetailFromDetail() -> slideInHorizontally(
                 initialOffsetX = { it },
-                animationSpec = tween(TabTransitionDurationMillis),
-            )
-            else -> tabTransition(tabDirection()).enter
+                animationSpec = tween(DetailTransitionDurationMillis),
+            ) + fadeIn(animationSpec = tween(DetailTransitionDurationMillis))
+            else -> {
+                val direction = tabDirection()
+                slideInHorizontally(
+                    initialOffsetX = { direction * it },
+                    animationSpec = tween(TabTransitionDurationMillis),
+                ) + fadeIn(animationSpec = tween(TabTransitionDurationMillis))
+            }
         }
     }
 
     val exit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         when {
             enteringDetail() || enteringDetailFromDetail() -> slideOutHorizontally(
-                targetOffsetX = { -it / 4 },
-                animationSpec = tween(TabTransitionDurationMillis),
-            )
-            else -> tabTransition(tabDirection()).exit
+                targetOffsetX = { -it / 8 },
+                animationSpec = tween(DetailTransitionDurationMillis),
+            ) + fadeOut(animationSpec = tween(DetailTransitionDurationMillis))
+            else -> {
+                val direction = tabDirection()
+                slideOutHorizontally(
+                    targetOffsetX = { -direction * it },
+                    animationSpec = tween(TabTransitionDurationMillis),
+                ) + fadeOut(animationSpec = tween(TabTransitionDurationMillis))
+            }
         }
     }
 
     val popEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
         when {
-            leavingDetail() -> slideInHorizontally(
-                initialOffsetX = { -it / 4 },
-                animationSpec = tween(TabTransitionDurationMillis),
-            )
-            returningFromDetail() -> slideInHorizontally(
-                initialOffsetX = { -it / 4 },
-                animationSpec = tween(TabTransitionDurationMillis),
-            )
-            else -> tabTransition(-tabDirection()).enter
+            leavingDetail() || returningFromDetail() -> slideInHorizontally(
+                initialOffsetX = { -it / 8 },
+                animationSpec = tween(DetailTransitionDurationMillis),
+            ) + fadeIn(animationSpec = tween(DetailTransitionDurationMillis))
+            else -> {
+                val direction = tabDirection()
+                slideInHorizontally(
+                    initialOffsetX = { direction * it },
+                    animationSpec = tween(TabTransitionDurationMillis),
+                ) + fadeIn(animationSpec = tween(TabTransitionDurationMillis))
+            }
         }
     }
 
     val popExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         when {
-            leavingDetail() -> slideOutHorizontally(
+            leavingDetail() || returningFromDetail() -> slideOutHorizontally(
                 targetOffsetX = { it },
-                animationSpec = tween(TabTransitionDurationMillis),
-            )
-            returningFromDetail() -> slideOutHorizontally(
-                targetOffsetX = { it },
-                animationSpec = tween(TabTransitionDurationMillis),
-            )
-            else -> tabTransition(-tabDirection()).exit
+                animationSpec = tween(DetailTransitionDurationMillis),
+            ) + fadeOut(animationSpec = tween(DetailTransitionDurationMillis))
+            else -> {
+                val direction = tabDirection()
+                slideOutHorizontally(
+                    targetOffsetX = { -direction * it },
+                    animationSpec = tween(TabTransitionDurationMillis),
+                ) + fadeOut(animationSpec = tween(TabTransitionDurationMillis))
+            }
         }
     }
 
@@ -126,26 +141,9 @@ object StreetSetNav {
     private fun AnimatedContentTransitionScope<NavBackStackEntry>.returningFromDetail() =
         initialState.isDetail() && targetState.isDetail() && initialState.destination.route != targetState.destination.route
 
-
     private fun AnimatedContentTransitionScope<NavBackStackEntry>.tabDirection(): Int {
-        val from = initialState.tabOrPrograms()?.ordinal ?: 0
-        val to = targetState.tabOrPrograms()?.ordinal ?: 0
+        val from = initialState.tabOrPrograms()?.index ?: 0
+        val to = targetState.tabOrPrograms()?.index ?: 0
         return if (to >= from) 1 else -1
     }
-
-    private fun tabTransition(direction: Int) = TabTransition(
-        enter = slideInHorizontally(
-            animationSpec = tween(TabTransitionDurationMillis),
-            initialOffsetX = { direction * it },
-        ) + fadeIn(tween(TabTransitionDurationMillis)),
-        exit = slideOutHorizontally(
-            animationSpec = tween(TabTransitionDurationMillis),
-            targetOffsetX = { -direction * it },
-        ) + fadeOut(tween(TabTransitionDurationMillis)),
-    )
-
-    private data class TabTransition(
-        val enter: EnterTransition,
-        val exit: ExitTransition,
-    )
 }

@@ -9,9 +9,10 @@ import com.composables.icons.lucide.Settings
 enum class Tab(
     val title: String,
     val icon: ImageVector,
-    val route: Any
+    val route: Any,
+    val index: Int,
 ) {
-    Programs("Programs", Lucide.Dumbbell, ProgramsRoute),
-    Stats("Stats", Lucide.ChartColumn, StatsRoute),
-    Settings("Settings", Lucide.Settings, SettingsRoute);
+    Programs("Programs", Lucide.Dumbbell, ProgramsRoute, 0),
+    Stats("Stats", Lucide.ChartColumn, StatsRoute, 1),
+    Settings("Settings", Lucide.Settings, SettingsRoute, 2),
 }

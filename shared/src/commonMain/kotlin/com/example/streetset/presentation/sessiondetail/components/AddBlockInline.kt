@@ -427,14 +427,19 @@ private fun DetailsSection(
     onDraftChange: (TrainingBlockDraft) -> Unit,
 ) {
     val protocol = draft.protocol
-    val restBetweenLabel = if (protocol == TrainingProtocol.SUPERSET) "Rest between supersets" else "Rest between rounds"
+    val restBetweenLabel = when (protocol) {
+        TrainingProtocol.SUPERSET -> "Rest between supersets"
+        TrainingProtocol.EMOM -> "Rest between rounds"
+        else -> "Rest between rounds"
+    }
+    val restAfterLabel = if (protocol == TrainingProtocol.EMOM) "Rest after EMOM" else "Rest"
 
     val rows = buildList {
         if (protocol.needsRounds) add(DetailRow("Rounds", draft.rounds, "3") { onDraftChange(draft.copy(rounds = it)) })
         if (protocol == TrainingProtocol.HOLD) add(DetailRow("Hold", draft.holdSeconds, "30s") { onDraftChange(draft.copy(holdSeconds = it)) })
         if (protocol == TrainingProtocol.METRONOME) add(DetailRow("BPM", draft.bpm, "60") { onDraftChange(draft.copy(bpm = it)) })
-        if (protocol != TrainingProtocol.EMOM && !protocol.isGroup) {
-            add(DetailRow("Rest", draft.restSeconds, "90s") { onDraftChange(draft.copy(restSeconds = it)) })
+        if (protocol != TrainingProtocol.HOLD && !protocol.isGroup) {
+            add(DetailRow(restAfterLabel, draft.restSeconds, "90s") { onDraftChange(draft.copy(restSeconds = it)) })
         }
         if (protocol.needsRounds) {
             add(DetailRow(restBetweenLabel, draft.restBetweenRoundsSeconds, "30s") { onDraftChange(draft.copy(restBetweenRoundsSeconds = it)) })

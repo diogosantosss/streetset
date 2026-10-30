@@ -1,5 +1,8 @@
 package com.example.streetset.presentation.training.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,10 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -28,14 +34,54 @@ import com.example.streetset.presentation.training.model.WorkoutStep
 import com.example.streetset.ui.theme.LocalAppColors
 import com.example.streetset.ui.theme.TrainingProtocolColors
 
+enum class UpcomingRowState {
+    Done,
+    Current,
+    Upcoming,
+}
+
 @Composable
 fun UpcomingRow(
     step: WorkoutStep,
     showDivider: Boolean,
+    state: UpcomingRowState = UpcomingRowState.Upcoming,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
     val accent = TrainingProtocolColors.colorFor(step.protocol, colors.accent)
+
+    val isDone = state == UpcomingRowState.Done
+    val isCurrent = state == UpcomingRowState.Current
+
+    val targetAlpha = if (isDone) 0.4f else 1f
+    val contentAlpha by animateFloatAsState(
+        targetValue = targetAlpha,
+        animationSpec = tween(durationMillis = 320),
+        label = "upcoming_row_alpha",
+    )
+    val dotColor by animateColorAsState(
+        targetValue = when {
+            isCurrent -> accent
+            isDone -> colors.textTertiary
+            else -> accent.copy(alpha = 0.8f)
+        },
+        animationSpec = tween(durationMillis = 320),
+        label = "upcoming_row_dot",
+    )
+    val nameColor by animateColorAsState(
+        targetValue = when {
+            isCurrent -> colors.textPrimary
+            isDone -> colors.textTertiary
+            else -> colors.textPrimary
+        },
+        animationSpec = tween(durationMillis = 320),
+        label = "upcoming_row_name",
+    )
+    val valueColor by animateColorAsState(
+        targetValue = if (isDone) colors.textTertiary else colors.textPrimary,
+        animationSpec = tween(durationMillis = 320),
+        label = "upcoming_row_value",
+    )
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (showDivider) {
@@ -43,20 +89,23 @@ fun UpcomingRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(0.5.dp)
-                    .background(colors.textTertiary.copy(alpha = 0.2f)),
+                    .background(colors.textTertiary.copy(alpha = 0.16f)),
             )
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp),
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (isCurrent) colors.surfaceHigh.copy(alpha = 0.7f) else colors.background)
+                .alpha(contentAlpha)
+                .padding(horizontal = if (isCurrent) 12.dp else 0.dp, vertical = 12.dp),
         ) {
             Box(
                 modifier = Modifier
-                    .size(4.dp)
+                    .size(if (isCurrent) 6.dp else 4.dp)
                     .clip(CircleShape)
-                    .background(accent),
+                    .background(dotColor),
             )
             Spacer(modifier = Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -64,8 +113,8 @@ fun UpcomingRow(
                     Text(
                         text = step.exerciseName,
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = colors.textPrimary,
+                        fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Medium,
+                        color = nameColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
@@ -76,7 +125,7 @@ fun UpcomingRow(
                         fontSize = 9.sp,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.7.sp,
-                        color = accent,
+                        color = if (isDone) colors.textTertiary else accent,
                     )
                 }
                 Row(
@@ -88,7 +137,7 @@ fun UpcomingRow(
                         fontSize = 12.sp,
                         color = colors.textTertiary,
                     )
-                    if (step.restSeconds > 0) {
+                    if (step.restSeconds > 0 && !isDone) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(text = "·", fontSize = 12.sp, color = colors.textTertiary)
                         Spacer(modifier = Modifier.width(6.dp))
@@ -99,14 +148,16 @@ fun UpcomingRow(
                         )
                     }
                     step.rpe?.let { rpe ->
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "·", fontSize = 12.sp, color = colors.textTertiary)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "RPE $rpe",
-                            fontSize = 12.sp,
-                            color = colors.textTertiary,
-                        )
+                        if (!isDone) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "·", fontSize = 12.sp, color = colors.textTertiary)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "RPE $rpe",
+                                fontSize = 12.sp,
+                                color = colors.textTertiary,
+                            )
+                        }
                     }
                 }
             }
@@ -114,9 +165,9 @@ fun UpcomingRow(
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = step.repsDisplay,
-                    fontSize = 16.sp,
+                    fontSize = if (isCurrent) 17.sp else 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = colors.textPrimary,
+                    color = valueColor,
                 )
                 if (step.loadValue != "-") {
                     Spacer(modifier = Modifier.width(8.dp))
@@ -129,15 +180,15 @@ fun UpcomingRow(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = step.loadValue,
-                        fontSize = 16.sp,
+                        fontSize = if (isCurrent) 17.sp else 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = colors.textPrimary,
+                        color = valueColor,
                     )
                     step.loadUnit?.let {
                         Text(
                             text = it,
                             fontSize = 12.sp,
-                            color = colors.textSecondary,
+                            color = colors.textTertiary,
                             modifier = Modifier.padding(start = 2.dp, bottom = 2.dp),
                         )
                     }
@@ -164,18 +215,22 @@ private fun UpcomingRowPreview() {
         blockId = 1,
         setNumber = 1,
         repsText = "8",
-        loadText = "BW",
+        loadText = "120",
     )
     val step = WorkoutStep(
         blockWithSets = BlockWithSets(
             block = block,
-            exerciseName = "Pull Ups",
+            exerciseName = "Back Squat",
             sets = listOf(set),
             children = emptyList(),
         ),
         set = set,
-        setIndex = 1,
+        setIndex = 2,
         totalSetsInBlock = 3,
     )
-    UpcomingRow(step = step, showDivider = true)
+    Column {
+        UpcomingRow(step = step, showDivider = false, state = UpcomingRowState.Done)
+        UpcomingRow(step = step, showDivider = false, state = UpcomingRowState.Current)
+        UpcomingRow(step = step, showDivider = false, state = UpcomingRowState.Upcoming)
+    }
 }
