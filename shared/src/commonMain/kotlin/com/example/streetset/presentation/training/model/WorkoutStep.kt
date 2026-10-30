@@ -43,12 +43,23 @@ data class WorkoutStep(
     val restDisplayShort: String
         get() = if (restSeconds > 0) formatRestSecondsShort(restSeconds) else ""
 
+    val isEmom: Boolean
+        get() = protocol.uppercase().replace("-", "_").replace(" ", "_") == "EMOM"
+
+    val emomRounds: Int
+        get() {
+            val blockRounds = blockWithSets.block.rounds
+            if (blockRounds != null && blockRounds > 0) return blockRounds
+            return if (totalSetsInBlock > 0) totalSetsInBlock else 1
+        }
+
     private fun protocolLabel(protocol: String): String =
         when (protocol.uppercase().replace("-", "_").replace(" ", "_")) {
             "NORMAL" -> "Normal"
             "WARM_UP", "WARMUP" -> "Warm-up"
             "TOP_SET", "TOPSET" -> "Top set"
             "BACK_OFF", "BACKOFF" -> "Back-off"
+            "EMOM" -> "EMOM"
             else -> protocol.replace("_", " ")
         }
 

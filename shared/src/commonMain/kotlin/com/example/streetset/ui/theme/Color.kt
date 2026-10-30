@@ -10,7 +10,7 @@ object TrainingProtocolColors {
     val superset = Color(0xFFA78BFA)
     val circuit = Color(0xFF2DD4BF)
     val hold = Color(0xFF22C55E)
-    val emom = Color(0xFFF472B6)
+    val emom = Color(0xFF6AD09C)
     val metronome = Color(0xFFFB923C)
 
     fun colorFor(protocol: String, accent: Color): Color = when (

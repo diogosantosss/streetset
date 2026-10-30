@@ -32,11 +32,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.streetset.presentation.training.components.CurrentSetPhase
+import com.example.streetset.presentation.training.components.EmomPhase
 import com.example.streetset.presentation.training.components.FinishedPhase
 import com.example.streetset.presentation.training.components.RestPhase
 import com.example.streetset.presentation.training.components.TrainingBottomBar
-import com.example.streetset.presentation.training.components.UpcomingList
 import com.example.streetset.presentation.training.components.UpcomingRow
+import com.example.streetset.presentation.training.model.ActiveProtocolState
 import com.example.streetset.ui.components.BOTTOM_BAR_HEIGTH
 import com.example.streetset.ui.components.ConfirmSheet
 import com.example.streetset.ui.components.TopBar
@@ -57,7 +58,6 @@ fun TrainingSessionScreen(
 ) {
     val colors = LocalAppColors.current
     val uiState by viewModel.uiState.collectAsState()
-    val restSecondsLeft by viewModel.restSecondsLeft.collectAsState()
 
     var showExitConfirm by remember { mutableStateOf(false) }
 
@@ -100,13 +100,33 @@ fun TrainingSessionScreen(
                     when (phase) {
                         is TrainingPhase.Rest -> {
                             RestPhase(
-                                restSecondsLeft = restSecondsLeft,
-                                restEndsAtMillis = phase.restEndsAtMillis,
+                                restSecondsLeft = uiState.restSecondsLeft,
+                                restEndsAtMillis = uiState.restEndsAtMillis,
                             )
                         }
                         is TrainingPhase.Working, TrainingPhase.Loading -> {
                             if (current != null) {
-                                CurrentSetPhase(step = current)
+                                when (val protocol = uiState.protocol) {
+                                    is ActiveProtocolState.Emom -> {
+                                        EmomPhase(
+                                            step = current,
+                                            emomUiState = protocol.uiState,
+                                            currentRound = protocol.currentRound,
+                                            totalRounds = protocol.totalRounds,
+                                            secondsLeft = protocol.secondsLeft,
+                                            prepareSecondsLeft = protocol.prepareSecondsLeft,
+                                            intervalSeconds = protocol.intervalSeconds,
+                                            onStart = viewModel::startActiveProtocol,
+                                        )
+                                    }
+                                    ActiveProtocolState.Idle -> {
+                                        CurrentSetPhase(step = current)
+                                    }
+                                    is ActiveProtocolState.Hold,
+                                    is ActiveProtocolState.Metronome -> {
+                                        CurrentSetPhase(step = current)
+                                    }
+                                }
                             }
                         }
                         TrainingPhase.Finished -> {
@@ -156,17 +176,27 @@ fun TrainingSessionScreen(
         )
 
         if (uiState.phase !is TrainingPhase.Finished) {
-            TrainingBottomBar(
-                isSessionPaused = uiState.sessionPaused,
-                actionText = if (uiState.phase is TrainingPhase.Rest) "Skip rest" else "Complete set",
-                onPauseClick = viewModel::togglePause,
-                onActionClick = viewModel::onPrimaryAction,
-                hazeState = hazeState,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = 24.dp)
-                    .navigationBarsPadding(),
-            )
+            val showBottomBar = when (val phase = uiState.phase) {
+                is TrainingPhase.Rest -> true
+                is TrainingPhase.Working -> {
+                    val protocol = uiState.protocol
+                    !(protocol is ActiveProtocolState.Emom && protocol.uiState != com.example.streetset.presentation.training.components.EmomUiState.COMPLETED)
+                }
+                else -> false
+            }
+            if (showBottomBar) {
+                TrainingBottomBar(
+                    isSessionPaused = uiState.sessionPaused,
+                    actionText = if (uiState.phase is TrainingPhase.Rest) "Skip rest" else "Complete set",
+                    onPauseClick = viewModel::togglePause,
+                    onActionClick = viewModel::onPrimaryAction,
+                    hazeState = hazeState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(horizontal = 24.dp)
+                        .navigationBarsPadding(),
+                )
+            }
         }
     }
 

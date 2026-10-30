@@ -601,19 +601,6 @@ private fun formatLoad(raw: String?): String? {
     return if (load.replace(",", ".").toDoubleOrNull() != null) "$load kg" else load
 }
 
-private fun setSummary(set: PlannedSet): String {
-    val parts = listOfNotNull(set.repsText?.let { "$it reps" }, set.loadText)
-    return if (parts.isEmpty()) "-" else parts.joinToString("  ·  ")
-}
-
-private fun metaLine(block: Block, includeRest: Boolean = true): String? {
-    val parts = listOfNotNull(
-        if (includeRest && block.restSeconds > 0) "${formatSeconds(block.restSeconds)} rest" else null,
-        block.rpe?.let { "RPE $it" },
-    )
-    return if (parts.isEmpty()) null else parts.joinToString("  ·  ")
-}
-
 private fun String.normalizedProtocol(): String =
     lowercase().replace("_", "").replace("-", "").replace(" ", "")
 

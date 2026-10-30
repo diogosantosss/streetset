@@ -4,10 +4,12 @@ import androidx.room3.Entity
 import androidx.room3.ForeignKey
 import androidx.room3.Index
 import androidx.room3.PrimaryKey
+import com.example.streetset.presentation.sessiondetail.model.BlockWithSets
 import com.example.streetset.presentation.sessiondetail.model.GroupExerciseDraft
 import com.example.streetset.presentation.sessiondetail.model.PlannedSetDraft
 import com.example.streetset.presentation.sessiondetail.model.TrainingBlockDraft
 import com.example.streetset.presentation.sessiondetail.model.TrainingProtocol
+import kotlin.collections.orEmpty
 
 @Entity(
     tableName = "blocks",
@@ -46,6 +48,17 @@ data class Block(
     val holdSeconds: Int? = null,
     val rpe: Int? = null,
     val bpm: Int? = null,
+)
+
+fun Block.toItem(
+    children: List<BlockWithSets> = emptyList(),
+    exerciseNames: Map<Int, String>,
+    setsByBlock: Map<Int, List<PlannedSet>>
+) = BlockWithSets(
+    block = this,
+    exerciseName = exerciseId?.let { exerciseNames[it] },
+    sets = id?.let { setsByBlock[it] }.orEmpty().sortedBy { it.setNumber },
+    children = children,
 )
 
 fun Block.toDraft(

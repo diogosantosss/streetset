@@ -9,15 +9,21 @@ import com.example.streetset.data.entities.Block
 import com.example.streetset.data.entities.Exercise
 import com.example.streetset.data.entities.PlannedSet
 import com.example.streetset.presentation.sessiondetail.model.BlockWithSets
+import com.example.streetset.presentation.sessiondetail.model.buildBlocksWithSets
+import com.example.streetset.presentation.training.components.EmomUiState
+import com.example.streetset.presentation.training.model.ActiveProtocolState
 import com.example.streetset.presentation.training.model.WorkoutStep
+import com.example.streetset.presentation.training.timer.EMOMTimer
 import com.example.streetset.util.Time
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -30,7 +36,7 @@ sealed interface TrainingPhase {
 
     data class Rest(
         val step: WorkoutStep,
-        val restEndsAtMillis: Long
+        val restEndsAtMillis: Long,
     ) : TrainingPhase
 
     data object Finished : TrainingPhase
@@ -42,6 +48,9 @@ data class TrainingSessionUiState(
     val queue: List<WorkoutStep> = emptyList(),
     val currentIndex: Int = 0,
     val sessionPaused: Boolean = false,
+    val restSecondsLeft: Long = 0L,
+    val restEndsAtMillis: Long = 0L,
+    val protocol: ActiveProtocolState = ActiveProtocolState.Idle,
 ) {
     val currentStep: WorkoutStep?
         get() = queue.getOrNull(currentIndex)
@@ -60,18 +69,39 @@ class TrainingSessionViewModel(
 
     private val stopwatch = Stopwatch()
     private val restTimer = RestTimer()
+
     private var timerJob: Job? = null
     private var restJob: Job? = null
 
-    private val _uiState = MutableStateFlow(TrainingSessionUiState())
-    val uiState: StateFlow<TrainingSessionUiState> = _uiState.asStateFlow()
+    private val emomTimer = EMOMTimer(viewModelScope)
 
-    private val _restSecondsLeft = MutableStateFlow(0L)
-    val restSecondsLeft: StateFlow<Long> = _restSecondsLeft.asStateFlow()
+    private val _uiState = MutableStateFlow(TrainingSessionUiState())
+    val uiState: StateFlow<TrainingSessionUiState> =
+        combine(_uiState, emomTimer.state) { base, protocolState ->
+            base.copy(protocol = protocolState)
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            TrainingSessionUiState(),
+        )
 
     init {
         startSessionTimer()
         loadQueue()
+        emomTimer.onAllRoundsCompleted = ::onEmomCompleted
+    }
+
+    private fun onEmomCompleted() {
+        val current = _uiState.value
+        val step = (current.phase as? TrainingPhase.Working)?.step ?: return
+        val rest = step.restSeconds
+        val nextIndex = current.currentIndex + 1
+
+        when {
+            rest > 0 && nextIndex < current.queue.size -> startRest(step, nextIndex, rest)
+            nextIndex >= current.queue.size -> _uiState.value = current.copy(phase = TrainingPhase.Finished, currentIndex = nextIndex)
+            else -> goToWorking(nextIndex)
+        }
     }
 
     private fun startSessionTimer() {
@@ -95,7 +125,7 @@ class TrainingSessionViewModel(
                 plannedSetDao.getBySession(sessionId),
                 exerciseDao.getAll(),
             ) { blocks, sets, exercises ->
-                buildQueue(blocks, sets, exercises)
+                buildQueue(buildBlocksWithSets(blocks, sets, exercises))
             }
                 .catch { throwable ->
                     Napier.e("Failed to load training queue", throwable, TAG)
@@ -112,36 +142,7 @@ class TrainingSessionViewModel(
         }
     }
 
-    private fun buildQueue(
-        blocks: List<Block>,
-        sets: List<PlannedSet>,
-        exercises: List<Exercise>,
-    ): List<WorkoutStep> {
-        val exerciseNames = exercises
-            .mapNotNull { exercise -> exercise.id?.let { it to exercise.name } }
-            .toMap()
-        val setsByBlock = sets.groupBy { it.blockId }
-        val childrenByParent = blocks.filter { it.parentId != null }.groupBy { it.parentId }
-
-        fun Block.toItem(children: List<BlockWithSets> = emptyList()) = BlockWithSets(
-            block = this,
-            exerciseName = exerciseId?.let { exerciseNames[it] },
-            sets = id?.let { setsByBlock[it] }.orEmpty().sortedBy { it.setNumber },
-            children = children,
-        )
-
-        val built = blocks
-            .filter { it.parentId == null }
-            .sortedBy { it.position }
-            .map { parent ->
-                val children = parent.id
-                    ?.let { childrenByParent[it] }
-                    .orEmpty()
-                    .sortedBy { it.position }
-                    .map(Block::toItem)
-                parent.toItem(children)
-            }
-
+    private fun buildQueue(built: List<BlockWithSets>): List<WorkoutStep> {
         val result = mutableListOf<WorkoutStep>()
         built.forEach { blockWithSets ->
             val blockSets = blockWithSets.sets.sortedBy { it.setNumber }
@@ -162,33 +163,52 @@ class TrainingSessionViewModel(
     private fun goToWorking(index: Int) {
         restJob?.cancel()
         restJob = null
-        _restSecondsLeft.value = 0L
+        emomTimer.reset()
         val step = _uiState.value.queue.getOrNull(index) ?: run {
-            _uiState.value = _uiState.value.copy(phase = TrainingPhase.Finished, currentIndex = index)
+            _uiState.value = _uiState.value.copy(
+                phase = TrainingPhase.Finished,
+                currentIndex = index,
+                restSecondsLeft = 0L,
+                restEndsAtMillis = 0L,
+            )
             return
         }
+
+        when {
+            step.isEmom -> emomTimer.configure(step)
+            else -> emomTimer.reset()
+        }
+
         _uiState.value = _uiState.value.copy(
             phase = TrainingPhase.Working(step),
             currentIndex = index,
+            restSecondsLeft = 0L,
+            restEndsAtMillis = 0L,
         )
     }
 
     fun onPrimaryAction() {
         val state = _uiState.value
         when (val phase = state.phase) {
+            is TrainingPhase.Rest -> skipRest()
             is TrainingPhase.Working -> {
-                val rest = phase.step.blockWithSets.block.restSeconds
-                val nextIndex = state.currentIndex + 1
-                if (rest > 0 && nextIndex < state.queue.size) {
-                    startRest(phase.step, nextIndex, rest)
-                } else if (nextIndex >= state.queue.size) {
-                    _uiState.value = state.copy(phase = TrainingPhase.Finished, currentIndex = nextIndex)
-                } else {
-                    goToWorking(nextIndex)
+                val step = phase.step
+
+                if (step.isEmom) {
+                    val emomState = emomTimer.state.value as? ActiveProtocolState.Emom
+                    if (emomState?.uiState != EmomUiState.COMPLETED) {
+                        return
+                    }
                 }
-            }
-            is TrainingPhase.Rest -> {
-                skipRest()
+
+                val nextIndex = state.currentIndex + 1
+                val rest = step.restSeconds
+
+                when {
+                    rest > 0 && nextIndex < state.queue.size -> startRest(step, nextIndex, rest)
+                    nextIndex >= state.queue.size -> _uiState.value = state.copy(phase = TrainingPhase.Finished, currentIndex = nextIndex)
+                    else -> goToWorking(nextIndex)
+                }
             }
             else -> Unit
         }
@@ -196,12 +216,15 @@ class TrainingSessionViewModel(
 
     private fun startRest(step: WorkoutStep, nextIndex: Int, restSeconds: Int) {
         val endsAt = Time.nowMillis() + restSeconds * 1000L
-        _uiState.value = _uiState.value.copy(phase = TrainingPhase.Rest(step, endsAt))
+        _uiState.value = _uiState.value.copy(
+            phase = TrainingPhase.Rest(step, endsAt),
+            restEndsAtMillis = endsAt,
+        )
         restJob?.cancel()
         restJob = viewModelScope.launch {
             try {
                 restTimer.countdown(endsAt).collect { left ->
-                    _restSecondsLeft.value = left
+                    _uiState.value = _uiState.value.copy(restSecondsLeft = left)
                     if (left <= 0) {
                         goToWorking(nextIndex)
                     }
@@ -232,10 +255,19 @@ class TrainingSessionViewModel(
         }
     }
 
+    fun startActiveProtocol() {
+        val protocol = emomTimer.state.value
+        when (protocol) {
+            is ActiveProtocolState.Emom -> emomTimer.start()
+            else -> Unit
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
         restJob?.cancel()
+        emomTimer.cancel()
     }
 
     private fun formatTime(minutes: Long, seconds: Long): String {

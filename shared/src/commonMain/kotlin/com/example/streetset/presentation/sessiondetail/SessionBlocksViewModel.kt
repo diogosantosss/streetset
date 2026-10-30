@@ -9,6 +9,7 @@ import com.example.streetset.data.entities.Block
 import com.example.streetset.data.entities.Exercise
 import com.example.streetset.data.entities.PlannedSet
 import com.example.streetset.presentation.sessiondetail.model.BlockWithSets
+import com.example.streetset.presentation.sessiondetail.model.buildBlocksWithSets
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,7 +57,7 @@ class SessionBlocksViewModel(
                 plannedSetDao.getBySession(sessionId),
                 exerciseDao.getAll(),
             ) { blocks, exercises, plannedSets ->
-                SessionBlocksState.Success(buildBlocks(blocks, exercises, plannedSets))
+                SessionBlocksState.Success(buildBlocksWithSets(blocks, exercises, plannedSets))
             }
                 .catch { throwable ->
                     Napier.e("Failed to load blocks", throwable, TAG)
@@ -64,37 +65,6 @@ class SessionBlocksViewModel(
                 }
                 .collect { state -> _state.value = state }
         }
-    }
-
-    private fun buildBlocks(
-        blocks: List<Block>,
-        sets: List<PlannedSet>,
-        exercises: List<Exercise>,
-    ): List<BlockWithSets> {
-        val exerciseNames = exercises
-            .mapNotNull { exercise -> exercise.id?.let { it to exercise.name } }
-            .toMap()
-        val setsByBlock = sets.groupBy { it.blockId }
-        val childrenByParent = blocks.filter { it.parentId != null }.groupBy { it.parentId }
-
-        fun Block.toItem(children: List<BlockWithSets> = emptyList()) = BlockWithSets(
-            block = this,
-            exerciseName = exerciseId?.let { exerciseNames[it] },
-            sets = id?.let { setsByBlock[it] }.orEmpty().sortedBy { it.setNumber },
-            children = children,
-        )
-
-        return blocks
-            .filter { it.parentId == null }
-            .sortedBy { it.position }
-            .map { parent ->
-                val children = parent.id
-                    ?.let { childrenByParent[it] }
-                    .orEmpty()
-                    .sortedBy { it.position }
-                    .map(Block::toItem)
-                parent.toItem(children)
-            }
     }
 
     companion object {
