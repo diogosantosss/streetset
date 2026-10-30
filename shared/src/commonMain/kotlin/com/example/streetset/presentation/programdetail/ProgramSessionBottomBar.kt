@@ -51,6 +51,7 @@ fun ProgramSessionBottomBar(
     nextWeek: Week?,
     completedCount: Int,
     totalCount: Int,
+    onStartClick: (Session) -> Unit = {},
 ) {
     if (totalCount == 0) return
 
@@ -79,7 +80,8 @@ fun ProgramSessionBottomBar(
         }
 
         IconButton(
-            onClick = {},
+            onClick = { nextSession?.let(onStartClick) },
+            enabled = nextSession != null,
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)

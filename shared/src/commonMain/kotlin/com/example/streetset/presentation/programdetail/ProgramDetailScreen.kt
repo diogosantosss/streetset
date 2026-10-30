@@ -203,6 +203,7 @@ private fun ProgramDetailContent(
                     completedCount = completedCount,
                     totalCount = orderedSessions.size,
                     hazeState = hazeState,
+                    onStartClick = onSessionClick,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(horizontal = 24.dp)
