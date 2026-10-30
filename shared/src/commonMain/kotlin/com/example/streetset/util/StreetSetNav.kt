@@ -32,7 +32,7 @@ object StreetSetNav {
         navigate(tab.route) {
             popUpTo(graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
-            restoreState = false
+            restoreState = true
         }
     }
 

@@ -1,5 +1,6 @@
 package com.example.streetset.presentation.training.timer
 
+import com.example.streetset.audio.CountdownAudio
 import com.example.streetset.presentation.training.components.EmomUiState
 import com.example.streetset.presentation.training.model.ActiveProtocolState
 import com.example.streetset.presentation.training.model.WorkoutStep
@@ -24,6 +25,8 @@ class EMOMTimer(
     private var prepareJob: Job? = null
     private var roundJob: Job? = null
 
+    private val audio = CountdownAudio()
+
     var onAllRoundsCompleted: (() -> Unit)? = null
 
     override fun configure(step: WorkoutStep) {
@@ -32,6 +35,8 @@ class EMOMTimer(
             .takeIf { it > 0 }
             ?: block.restSeconds.takeIf { it > 0 }
             ?: 60
+
+        audio.reset()
 
         _state.value = ActiveProtocolState.Emom(
             uiState = EmomUiState.IDLE,
@@ -50,6 +55,8 @@ class EMOMTimer(
 
         cancel()
 
+        audio.reset()
+
         _state.value = current.copy(
             uiState = EmomUiState.PREPARE_COUNTDOWN,
             prepareSecondsLeft = 5,
@@ -63,6 +70,7 @@ class EMOMTimer(
                         val emom = state as? ActiveProtocolState.Emom ?: return@update state
                         emom.copy(prepareSecondsLeft = count)
                     }
+                    audio.onTick(count.toLong())
                     delay(1000.milliseconds)
                     count--
                 }
@@ -85,6 +93,7 @@ class EMOMTimer(
         }
 
         cancelRoundOnly()
+        audio.reset()
         _state.value = current.copy(
             uiState = EmomUiState.RUNNING,
             currentRound = roundIndex,
@@ -99,6 +108,7 @@ class EMOMTimer(
                         val emom = state as? ActiveProtocolState.Emom ?: return@update state
                         emom.copy(secondsLeft = seconds)
                     }
+                    audio.onTick(seconds.toLong())
                     if (seconds == 0) break
                     delay(1000.milliseconds)
                     seconds--
@@ -140,6 +150,7 @@ class EMOMTimer(
 
     override fun reset() {
         cancel()
+        audio.reset()
         _state.value = ActiveProtocolState.Idle
     }
 }
