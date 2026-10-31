@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.sp
 import com.example.streetset.ui.components.ModalCard
 import com.example.streetset.ui.components.ProcessingModal
 import com.example.streetset.ui.theme.LocalAppColors
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun CreateSessionSheet(
@@ -128,7 +130,11 @@ private fun NameField(
     val colors = LocalAppColors.current
     val focusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    LaunchedEffect(Unit) {
+        // Waits for the card animation to finish before opening the keyboard
+        delay(350.milliseconds)
+        focusRequester.requestFocus()
+    }
 
     Column {
         BasicTextField(

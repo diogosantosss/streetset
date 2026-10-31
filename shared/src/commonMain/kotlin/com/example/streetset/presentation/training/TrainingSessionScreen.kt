@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.streetset.presentation.training.components.CurrentGroupPhase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.example.streetset.presentation.training.components.CurrentSetPhase
@@ -121,6 +122,7 @@ fun TrainingSessionScreen(
                             restEndsAtMillis = uiState.restEndsAtMillis,
                         )
                     }
+
                     is TrainingPhase.Working, TrainingPhase.Loading -> {
                         if (current != null) {
                             when (val protocol = uiState.protocol) {
@@ -136,16 +138,15 @@ fun TrainingSessionScreen(
                                         onStart = viewModel::startActiveProtocol,
                                     )
                                 }
-                                ActiveProtocolState.Idle -> {
-                                    CurrentSetPhase(step = current)
-                                }
-                                is ActiveProtocolState.Hold,
-                                is ActiveProtocolState.Metronome -> {
-                                    CurrentSetPhase(step = current)
-                                }
+
+                                is ActiveProtocolState.Group -> CurrentGroupPhase(step = current, group = protocol)
+
+                                ActiveProtocolState.Idle, is ActiveProtocolState.Hold,
+                                is ActiveProtocolState.Metronome -> CurrentSetPhase(step = current)
                             }
                         }
                     }
+
                     TrainingPhase.Finished -> {
                         FinishedPhase()
                     }
@@ -214,17 +215,19 @@ fun TrainingSessionScreen(
         )
 
         if (uiState.phase !is TrainingPhase.Finished) {
-            val showBottomBar = when (val phase = uiState.phase) {
+            val showBottomBar = when (uiState.phase) {
                 is TrainingPhase.Rest -> true
-                is TrainingPhase.Working -> {
-                    val protocol = uiState.protocol
-                    !(protocol is ActiveProtocolState.Emom && protocol.uiState != com.example.streetset.presentation.training.components.EmomUiState.COMPLETED)
-                }
+                is TrainingPhase.Working -> uiState.protocol.canComplete
                 else -> false
             }
+
             TrainingBottomBar(
                 isSessionPaused = uiState.sessionPaused,
-                actionText = if (uiState.phase is TrainingPhase.Rest) "Skip rest" else "Complete set",
+                actionText = when {
+                    uiState.phase is TrainingPhase.Rest -> "Skip rest"
+                    uiState.protocol is ActiveProtocolState.Group -> "Complete round"
+                    else -> "Complete set"
+                },
                 onPauseClick = viewModel::togglePause,
                 onActionClick = viewModel::onPrimaryAction,
                 hazeState = hazeState,

@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,15 +33,21 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,9 +63,12 @@ import com.composables.icons.lucide.ChevronLeft
 import com.composables.icons.lucide.ChevronRight
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
+import com.composables.icons.lucide.Trash2
 import com.example.streetset.data.dao.DaySession
 import com.example.streetset.data.dao.DaySummary
 import com.example.streetset.ui.components.BOTTOM_BAR_HEIGTH
+import com.example.streetset.ui.components.ConfirmSheet
+import com.example.streetset.ui.components.ProcessingModal
 import com.example.streetset.ui.components.TopBar
 import com.example.streetset.ui.components.TopBarDefaults
 import com.example.streetset.ui.theme.LocalAppColors
@@ -85,10 +95,10 @@ fun CalendarScreen(
     onSessionClick: (sessionId: Int, title: String) -> Unit,
     calendarViewModel: CalendarViewModel = koinViewModel<CalendarViewModel>(),
     createViewModel: CreateSessionCalendarViewModel = koinViewModel<CreateSessionCalendarViewModel>(),
+    deleteViewModel: DeleteSessionViewModel = koinViewModel<DeleteSessionViewModel>(),
 ) {
     val colors = LocalAppColors.current
     val state by calendarViewModel.state.collectAsState()
-    val createState by createViewModel.state.collectAsState()
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
@@ -117,6 +127,7 @@ fun CalendarScreen(
                 start = 16.dp,
                 end = 16.dp,
                 top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + TopBarDefaults.Height + 8.dp,
+                // Leaves room for the floating tab bar
                 bottom = BOTTOM_BAR_HEIGTH,
             ),
             verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -151,6 +162,7 @@ fun CalendarScreen(
                             sessions = current.sessions,
                             onSessionClick = onSessionClick,
                             onAdd = { createViewModel.open(current.selectedDate) },
+                            onDelete = deleteViewModel::requestDelete,
                             onToday = {
                                 calendarViewModel.selectDate(today)
                                 scope.launch { pagerState.animateScrollToPage(InitialPage) }
@@ -171,12 +183,9 @@ fun CalendarScreen(
         )
     }
 
-    CreateSessionSheet(
-        state = createState,
-        onNameChange = createViewModel::updateName,
-        onCreate = createViewModel::create,
-        onDismiss = createViewModel::dismiss,
-    )
+    // These read their own state, so opening them doesn't recompose the whole screen
+    CreateSessionHost(createViewModel)
+    DeleteSessionHost(deleteViewModel)
 }
 
 private fun monthForPage(anchor: LocalDate, page: Int): LocalDate =
@@ -202,8 +211,8 @@ private fun MonthPager(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Spacer(modifier = Modifier.weight(1f))
-            MonthArrow(Lucide.ChevronLeft, onPrevious)
-            MonthArrow(Lucide.ChevronRight, onNext)
+            MonthArrow(icon = Lucide.ChevronLeft, onClick = onPrevious)
+            MonthArrow(icon = Lucide.ChevronRight, onClick = onNext)
         }
         Row(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
             listOf("M", "T", "W", "T", "F", "S", "S").forEach { label ->
@@ -243,7 +252,12 @@ private fun MonthArrow(icon: ImageVector, onClick: () -> Unit) {
             .clip(CircleShape)
             .clickable(onClick = onClick),
     ) {
-        Icon(icon, null, tint = LocalAppColors.current.textSecondary, modifier = Modifier.size(18.dp))
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = LocalAppColors.current.textSecondary,
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
 
@@ -360,6 +374,7 @@ private fun DaySection(
     sessions: List<DaySession>,
     onSessionClick: (Int, String) -> Unit,
     onAdd: () -> Unit,
+    onDelete: (DaySession) -> Unit,
     onToday: () -> Unit,
 ) {
     val colors = LocalAppColors.current
@@ -412,12 +427,16 @@ private fun DaySection(
 
         GroupedSurface {
             sessions.forEach { session ->
-                SessionRow(
-                    session = session,
-                    isPast = date < today,
-                    onClick = { onSessionClick(session.id, session.name) },
-                )
-                InsetDivider()
+                // The key keeps each row's swipe state attached to its own session
+                key(session.id) {
+                    SwipeableSessionRow(
+                        session = session,
+                        isPast = date < today,
+                        onClick = { onSessionClick(session.id, session.name) },
+                        onDelete = { onDelete(session) },
+                    )
+                    InsetDivider()
+                }
             }
             AddSessionRow(onClick = onAdd)
         }
@@ -425,7 +444,58 @@ private fun DaySection(
 }
 
 @Composable
-private fun SessionRow(session: DaySession, isPast: Boolean, onClick: () -> Unit) {
+private fun SwipeableSessionRow(
+    session: DaySession,
+    isPast: Boolean,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val colors = LocalAppColors.current
+    val currentOnDelete by rememberUpdatedState(onDelete)
+
+    val dismissState = rememberSwipeToDismissBoxState(
+        positionalThreshold = { distance -> distance * 0.3f },
+    )
+
+    // The row settles on "delete", asks for confirmation and springs back
+    LaunchedEffect(dismissState.currentValue) {
+        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
+            currentOnDelete()
+            dismissState.reset()
+        }
+    }
+
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = true,
+        backgroundContent = {
+            if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(colors.error)
+                        .padding(end = 20.dp),
+                ) {
+                    Text("Delete", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(Lucide.Trash2, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+            }
+        },
+    ) {
+        SessionRow(session = session, isPast = isPast, onClick = onClick)
+    }
+}
+
+@Composable
+private fun SessionRow(
+    session: DaySession,
+    isPast: Boolean,
+    onClick: () -> Unit,
+) {
     val colors = LocalAppColors.current
     val blocks = when (session.blockCount) {
         0 -> "No blocks yet"
@@ -443,6 +513,8 @@ private fun SessionRow(session: DaySession, isPast: Boolean, onClick: () -> Unit
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            // Opaque, so the swipe background doesn't show through
+            .background(colors.surfaceHigh)
             .clickable(onClick = onClick)
             .heightIn(min = 60.dp)
             .padding(horizontal = 16.dp),
@@ -472,16 +544,6 @@ private fun SessionRow(session: DaySession, isPast: Boolean, onClick: () -> Unit
     }
 }
 
-private fun formatDuration(seconds: Int): String {
-    val hours = seconds / 3600
-    val minutes = (seconds % 3600) / 60
-    return when {
-        hours > 0 -> "${hours}h ${minutes.toString().padStart(2, '0')}m"
-        minutes > 0 -> "$minutes min"
-        else -> "<1 min"
-    }
-}
-
 @Composable
 private fun AddSessionRow(onClick: () -> Unit) {
     val colors = LocalAppColors.current
@@ -497,6 +559,16 @@ private fun AddSessionRow(onClick: () -> Unit) {
         Icon(Lucide.Plus, null, tint = colors.accent, modifier = Modifier.size(14.dp))
         Spacer(modifier = Modifier.width(8.dp))
         Text("Add session", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = colors.accent)
+    }
+}
+
+private fun formatDuration(seconds: Int): String {
+    val hours = seconds / 3600
+    val minutes = (seconds % 3600) / 60
+    return when {
+        hours > 0 -> "${hours}h ${minutes.toString().padStart(2, '0')}m"
+        minutes > 0 -> "$minutes min"
+        else -> "<1 min"
     }
 }
 
@@ -591,9 +663,50 @@ private fun CalendarError(message: String, onRetry: () -> Unit) {
     }
 }
 
+// Create and delete
+@Composable
+private fun CreateSessionHost(viewModel: CreateSessionCalendarViewModel) {
+    val state by viewModel.state.collectAsState()
+
+    CreateSessionSheet(
+        state = state,
+        onNameChange = viewModel::updateName,
+        onCreate = viewModel::create,
+        onDismiss = viewModel::dismiss,
+    )
+}
+
+@Composable
+private fun DeleteSessionHost(viewModel: DeleteSessionViewModel) {
+    val state by viewModel.state.collectAsState()
+    val session = when (val current = state) {
+        is DeleteSessionState.ConfirmDelete -> current.session
+        is DeleteSessionState.Deleting -> current.session
+        DeleteSessionState.Closed -> null
+    }
+    val error = (state as? DeleteSessionState.ConfirmDelete)?.error
+
+    ConfirmSheet(
+        visible = state is DeleteSessionState.ConfirmDelete,
+        title = "Delete session?",
+        message = listOfNotNull(
+            session?.let { "Delete \"${it.name}\"? Its blocks and workout history will also be deleted." },
+            error,
+        ).joinToString("\n\n"),
+        confirmText = "Delete",
+        isDestructive = true,
+        onConfirm = viewModel::confirmDelete,
+        onDismiss = viewModel::dismiss,
+    )
+
+    if (state is DeleteSessionState.Deleting) {
+        ProcessingModal(text = "Deleting session...")
+    }
+}
+
 // Shared
 @Composable
-private fun GroupedSurface(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+private fun GroupedSurface(content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()

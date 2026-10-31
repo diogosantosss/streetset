@@ -57,6 +57,9 @@ interface SessionDao {
     @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM sessions WHERE date = :date")
     suspend fun nextPosition(date: LocalDate): Int
 
+    @Query("DELETE FROM sessions WHERE id = :id")
+    suspend fun deleteById(id: Int)
+
     @Insert
     suspend fun insert(session: Session): Long
 

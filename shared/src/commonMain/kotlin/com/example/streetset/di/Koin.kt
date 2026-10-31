@@ -3,6 +3,7 @@ package com.example.streetset.di
 import com.example.streetset.data.DatabaseSeeder
 import com.example.streetset.presentation.calendar.CalendarViewModel
 import com.example.streetset.presentation.calendar.CreateSessionCalendarViewModel
+import com.example.streetset.presentation.calendar.DeleteSessionViewModel
 import com.example.streetset.presentation.sessiondetail.AddBlockViewModel
 import com.example.streetset.presentation.sessiondetail.BlockOptionsViewModel
 import com.example.streetset.presentation.sessiondetail.SessionBlocksViewModel
@@ -28,9 +29,10 @@ val appModule = module {
     viewModelOf(::BlockOptionsViewModel)
     viewModel { (sessionId: Int) -> TrainingSessionViewModel(sessionId) }
 
-    //calendar test
+    // Calendar related view-models
     viewModelOf(::CalendarViewModel)
     viewModelOf(::CreateSessionCalendarViewModel)
+    viewModelOf(::DeleteSessionViewModel)
 }
 
 fun initKoin(appDeclaration: KoinAppDeclaration = {}) {

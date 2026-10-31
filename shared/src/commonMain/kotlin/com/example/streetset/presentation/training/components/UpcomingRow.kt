@@ -36,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Activity
+import com.composables.icons.lucide.Dumbbell
 import com.composables.icons.lucide.Gauge
 import com.composables.icons.lucide.Hourglass
 import com.composables.icons.lucide.Lucide
@@ -209,21 +210,23 @@ private fun RowScope.MetronomeUpcomingMeta(step: WorkoutStep, style: UpcomingSty
 private fun RowScope.GroupUpcomingMeta(step: WorkoutStep, style: UpcomingStyle) {
     val block = step.blockWithSets.block
     val children = step.blockWithSets.children
-    val rest = block.restBetweenRoundsSeconds.takeIf { it > 0 } ?: block.restSeconds
+    // Only the first round lists the exercises, the others stay compact
+    val showExercises = children.isNotEmpty() && step.setIndex == 1
+    val isLastRound = step.setIndex >= step.totalSetsInBlock
+    val rest = if (isLastRound) block.restSeconds else block.restBetweenRoundsSeconds
 
     UpcomingLeft(step = step, style = style) {
-        if (children.isNotEmpty()) {
+        if (showExercises) {
             GroupExercises(
                 children = children,
-                isSuperset = step.protocol == TrainingProtocol.SUPERSET,
                 style = style,
             )
         }
         MetaRow(
-            rounds = block.rounds,
+            modifier = Modifier.padding(top = if (showExercises) 10.dp else 3.dp),
+            setLabel = "Round ${step.setIndex}/${step.totalSetsInBlock}",
             rest = rest,
             rpe = block.rpe,
-            modifier = Modifier.padding(top = 10.dp),
         )
     }
 }
@@ -236,9 +239,25 @@ private fun RowScope.UpcomingLeft(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier = Modifier.weight(1f)) {
-        UpcomingTitle(name = step.exerciseName, tag = step.protocolDisplay.uppercase(), style = style)
+        if (step.protocol.isGroup) {
+            GroupTitle(label = step.protocolDisplay, style = style)
+        } else {
+            UpcomingTitle(name = step.exerciseName, tag = step.protocolDisplay.uppercase(), style = style)
+        }
         content()
     }
+}
+
+@Composable
+private fun GroupTitle(label: String, style: UpcomingStyle) {
+    Text(
+        text = label,
+        fontSize = 15.sp,
+        fontWeight = if (style.isCurrent) FontWeight.SemiBold else FontWeight.Medium,
+        color = style.accent,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
 }
 
 @Composable
@@ -253,17 +272,14 @@ private fun UpcomingTitle(name: String, tag: String, style: UpcomingStyle) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false),
         )
-        // Groups are often named after their protocol, so the tag would repeat the title
-        if (!name.equals(tag, ignoreCase = true)) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = tag,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.7.sp,
-                color = style.accent,
-            )
-        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = tag,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.7.sp,
+            color = style.accent,
+        )
     }
 }
 
@@ -318,13 +334,16 @@ private fun MetaItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(12.dp),
-        )
-        Text(text = text, fontSize = 12.sp, color = color, maxLines = 1)
+        // if it's a bodyweight exercise we don't want to show it
+        if (text.uppercase() != "BW") {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(12.dp),
+            )
+            Text(text = text, fontSize = 12.sp, color = color, maxLines = 1)
+        }
     }
 }
 
@@ -373,7 +392,6 @@ private fun StandardRight(step: WorkoutStep, style: UpcomingStyle) {
 @Composable
 private fun GroupExercises(
     children: List<BlockWithSets>,
-    isSuperset: Boolean,
     style: UpcomingStyle,
 ) {
     Row(
@@ -395,17 +413,16 @@ private fun GroupExercises(
                 .weight(1f)
                 .padding(start = 10.dp),
         ) {
-            children.forEachIndexed { index, child ->
-                val label = if (isSuperset) ('A' + index).toString() else (index + 1).toString()
-                GroupExerciseLine(label = label, child = child, style = style)
+            children.forEach { child ->
+                GroupExerciseLine(child = child, style = style)
             }
         }
     }
 }
 
+/** Reps and name on the left ("10 Pull-ups"), load at the end. */
 @Composable
 private fun GroupExerciseLine(
-    label: String,
     child: BlockWithSets,
     style: UpcomingStyle,
 ) {
@@ -414,13 +431,15 @@ private fun GroupExerciseLine(
     val load = formatLoad(set?.loadText)
 
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = label,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = style.accent,
-            modifier = Modifier.width(14.dp),
-        )
+        reps?.let {
+            Text(
+                text = it,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = style.primary,
+                modifier = Modifier.padding(end = 6.dp),
+            )
+        }
         Text(
             text = child.exerciseName ?: "-",
             fontSize = 13.sp,
@@ -429,13 +448,9 @@ private fun GroupExerciseLine(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        Spacer(modifier = Modifier.width(8.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            reps?.let { MetaItem(Lucide.Repeat, it, color = style.secondary) }
-            load?.let { MetaItem(Lucide.Scale, it, color = style.secondary) }
+        load?.let {
+            Spacer(modifier = Modifier.width(8.dp))
+            MetaItem(Lucide.Dumbbell, it, color = style.secondary)
         }
     }
 }
