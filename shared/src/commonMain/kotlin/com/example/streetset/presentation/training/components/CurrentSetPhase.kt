@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.example.streetset.data.entities.Block
 import com.example.streetset.data.entities.PlannedSet
 import com.example.streetset.presentation.sessiondetail.model.BlockWithSets
+import com.example.streetset.presentation.sessiondetail.model.TrainingProtocol
 import com.example.streetset.presentation.training.model.WorkoutStep
 import com.example.streetset.ui.theme.LocalAppColors
 import com.example.streetset.ui.theme.TrainingProtocolColors
@@ -37,7 +38,7 @@ fun CurrentSetPhase(
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
-    val accent = TrainingProtocolColors.colorFor(step.protocol, colors.accent)
+    val accent = TrainingProtocolColors.colorFor(step.protocol.name, colors.accent)
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -148,7 +149,7 @@ private fun CurrentSetPhasePreview() {
         sessionId = 1,
         exerciseId = 1,
         position = 0,
-        protocol = "TOP_SET",
+        protocol = TrainingProtocol.TOP_SET,
         restSeconds = 90,
         rpe = 8,
     )

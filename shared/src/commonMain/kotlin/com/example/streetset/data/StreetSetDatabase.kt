@@ -30,7 +30,7 @@ import com.example.streetset.data.entities.Week
         PlannedSet::class,
         SessionLog::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 @ColumnTypeConverters(Converters::class)

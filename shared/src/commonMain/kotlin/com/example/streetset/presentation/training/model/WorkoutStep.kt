@@ -1,7 +1,9 @@
 package com.example.streetset.presentation.training.model
 
 import com.example.streetset.data.entities.PlannedSet
+import com.example.streetset.presentation.sessiondetail.label
 import com.example.streetset.presentation.sessiondetail.model.BlockWithSets
+import com.example.streetset.presentation.sessiondetail.model.TrainingProtocol
 
 data class WorkoutStep(
     val blockWithSets: BlockWithSets,
@@ -13,7 +15,7 @@ data class WorkoutStep(
     val exerciseName: String
         get() = blockWithSets.exerciseName?.takeIf { it.isNotBlank() } ?: "-"
 
-    val protocol: String
+    val protocol: TrainingProtocol
         get() = blockWithSets.block.protocol
 
     val restSeconds: Int
@@ -38,29 +40,19 @@ data class WorkoutStep(
         get() = loadPair.second
 
     val protocolDisplay: String
-        get() = protocolLabel(protocol)
+        get() = protocol.label
 
     val restDisplayShort: String
         get() = if (restSeconds > 0) formatRestSecondsShort(restSeconds) else ""
 
     val isEmom: Boolean
-        get() = protocol.uppercase().replace("-", "_").replace(" ", "_") == "EMOM"
+        get() = protocol == TrainingProtocol.EMOM
 
     val emomRounds: Int
         get() {
             val blockRounds = blockWithSets.block.rounds
             if (blockRounds != null && blockRounds > 0) return blockRounds
             return if (totalSetsInBlock > 0) totalSetsInBlock else 1
-        }
-
-    private fun protocolLabel(protocol: String): String =
-        when (protocol.uppercase().replace("-", "_").replace(" ", "_")) {
-            "NORMAL" -> "Normal"
-            "WARM_UP", "WARMUP" -> "Warm-up"
-            "TOP_SET", "TOPSET" -> "Top set"
-            "BACK_OFF", "BACKOFF" -> "Back-off"
-            "EMOM" -> "EMOM"
-            else -> protocol.replace("_", " ")
         }
 
     private fun splitLoad(raw: String?): Pair<String, String?> {

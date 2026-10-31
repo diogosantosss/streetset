@@ -40,7 +40,7 @@ data class Block(
     val sessionId: Int,
     val parentId: Int? = null,
     val position: Int = 0,
-    val protocol: String,
+    val protocol: TrainingProtocol,
     val exerciseId: Int? = null,
     val restSeconds: Int = 0,
     val rounds: Int? = null,
@@ -66,7 +66,6 @@ fun Block.toDraft(
     exercises: List<Exercise>,
     sets: List<PlannedSet>,
 ): TrainingBlockDraft {
-    val protocol = runCatching { TrainingProtocol.valueOf(protocol) }.getOrDefault(TrainingProtocol.NORMAL)
     if (parentId != null) {
         return TrainingBlockDraft(protocol = TrainingProtocol.NORMAL)
     }

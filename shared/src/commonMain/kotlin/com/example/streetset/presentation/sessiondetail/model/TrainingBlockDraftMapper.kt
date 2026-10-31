@@ -19,7 +19,7 @@ fun TrainingBlockDraft.toBlock(
     return Block(
         sessionId = sessionId,
         position = position,
-        protocol = protocol.name,
+        protocol = protocol,
         exerciseId = exerciseId,
         restSeconds = if (usesRest) parseSeconds(restSeconds) ?: 0 else 0,
         rounds = if (protocol.needsRounds) parsePositiveInt(rounds) else null,
@@ -47,7 +47,7 @@ fun GroupExerciseDraft.toChildBlock(
     sessionId = sessionId,
     parentId = parentId,
     position = position,
-    protocol = TrainingProtocol.NORMAL.name,
+    protocol = TrainingProtocol.NORMAL,
     exerciseId = exerciseId,
 )
 

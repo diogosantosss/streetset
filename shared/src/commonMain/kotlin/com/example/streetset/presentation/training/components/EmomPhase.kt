@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.example.streetset.data.entities.Block
 import com.example.streetset.data.entities.PlannedSet
 import com.example.streetset.presentation.sessiondetail.model.BlockWithSets
+import com.example.streetset.presentation.sessiondetail.model.TrainingProtocol
 import com.example.streetset.presentation.training.model.WorkoutStep
 import com.example.streetset.ui.theme.LocalAppColors
 import com.example.streetset.ui.theme.TrainingProtocolColors
@@ -66,7 +67,7 @@ fun EmomPhase(
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
-    val accent = TrainingProtocolColors.colorFor(step.protocol, colors.accent)
+    val accent = TrainingProtocolColors.colorFor(step.protocol.name, colors.accent)
     val trackColor = colors.textTertiary.copy(alpha = 0.16f)
 
     val progress = when (emomUiState) {
@@ -286,7 +287,7 @@ private fun EmomPhasePreview() {
         sessionId = 1,
         exerciseId = 1,
         position = 0,
-        protocol = "EMOM",
+        protocol = TrainingProtocol.EMOM,
         restSeconds = 0,
         rounds = 5,
     )

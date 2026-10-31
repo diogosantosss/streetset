@@ -58,7 +58,9 @@ import com.composables.icons.lucide.Repeat
 import com.composables.icons.lucide.Timer
 import com.example.streetset.data.entities.Block
 import com.example.streetset.data.entities.PlannedSet
+import com.example.streetset.presentation.sessiondetail.label
 import com.example.streetset.presentation.sessiondetail.model.BlockWithSets
+import com.example.streetset.presentation.sessiondetail.model.TrainingProtocol
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
 import com.example.streetset.ui.theme.TrainingProtocolColors
@@ -91,7 +93,7 @@ fun BlockSection(
 
         is BlockUiState.Content -> {
             val item = state.item
-            when (item.block.protocol.normalizedProtocol()) {
+            when (item.block.protocol.name.normalizedProtocol()) {
                 "superset", "circuit" -> GroupBlockSection(item, state.isBusy, modifier, onClick, onLongClick)
                 "hold" -> HoldBlockSection(item, state.isBusy, modifier, onClick, onLongClick)
                 "emom" -> EmomBlockSection(item, state.isBusy, modifier, onClick, onLongClick)
@@ -135,8 +137,8 @@ fun GroupBlockSection(
 ) {
     val colors = LocalAppColors.current
     val block = item.block
-    val color = TrainingProtocolColors.colorFor(block.protocol, colors.accent)
-    val isSuperset = block.protocol.normalizedProtocol() == "superset"
+    val color = TrainingProtocolColors.colorFor(block.protocol.name, colors.accent)
+    val isSuperset = block.protocol == TrainingProtocol.SUPERSET
 
     SectionFrame(
         block = block,
@@ -244,7 +246,7 @@ fun HoldBlockSection(
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
 ) {
-    val color = TrainingProtocolColors.colorFor(item.block.protocol, LocalAppColors.current.accent)
+    val color = TrainingProtocolColors.colorFor(item.block.protocol.name, LocalAppColors.current.accent)
 
     SectionFrame(
         block = item.block,
@@ -272,7 +274,7 @@ fun EmomBlockSection(
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
 ) {
-    val color = TrainingProtocolColors.colorFor(item.block.protocol, LocalAppColors.current.accent)
+    val color = TrainingProtocolColors.colorFor(item.block.protocol.name, LocalAppColors.current.accent)
     val totalMinutes = item.sets.sumOf { it.minutes ?: 0 }
 
     SectionFrame(
@@ -301,7 +303,7 @@ fun MetronomeBlockSection(
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
 ) {
-    val color = TrainingProtocolColors.colorFor(item.block.protocol, LocalAppColors.current.accent)
+    val color = TrainingProtocolColors.colorFor(item.block.protocol.name, LocalAppColors.current.accent)
 
     SectionFrame(
         block = item.block,
@@ -436,7 +438,7 @@ private fun SectionFrame(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = LocalAppColors.current
-    val color = TrainingProtocolColors.colorFor(block.protocol, colors.accent)
+    val color = TrainingProtocolColors.colorFor(block.protocol.name, colors.accent)
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val clickable = !isBusy && (onClick != null || onLongClick != null)
@@ -455,7 +457,7 @@ private fun SectionFrame(
                 .padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
         ) {
             Text(
-                text = protocolLabel(block.protocol).uppercase(),
+                text = block.protocol.label.uppercase(),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.6.sp,
@@ -604,18 +606,6 @@ private fun formatLoad(raw: String?): String? {
 private fun String.normalizedProtocol(): String =
     lowercase().replace("_", "").replace("-", "").replace(" ", "")
 
-private fun protocolLabel(protocol: String): String = when (protocol.normalizedProtocol()) {
-    "normal" -> "Normal"
-    "warmup" -> "Warm-up"
-    "topset" -> "Top set"
-    "backoff" -> "Back-off"
-    "superset" -> "Superset"
-    "circuit" -> "Circuit"
-    "hold" -> "Hold"
-    "emom" -> "EMOM"
-    "metronome" -> "Metronome"
-    else -> protocol
-}
 
 private fun formatSeconds(total: Int): String {
     val minutes = total / 60
@@ -722,7 +712,7 @@ private fun PreviewSurface(content: @Composable ColumnScope.() -> Unit) {
 }
 
 private fun previewBlock(
-    protocol: String,
+    protocol: TrainingProtocol,
     id: Int = 1,
     parentId: Int? = null,
     restSeconds: Int = 0,
@@ -753,7 +743,7 @@ private fun previewSet(
 ) = PlannedSet(blockId = blockId, setNumber = number, repsText = reps, loadText = load, minutes = minutes)
 
 private val previewStandard = BlockWithSets(
-    block = previewBlock("topset", restSeconds = 180, rpe = 9),
+    block = previewBlock(TrainingProtocol.TOP_SET, restSeconds = 180, rpe = 9),
     exerciseName = "Back Squat",
     sets = listOf(previewSet(1, 1, "3", "120kg")),
 )
@@ -764,7 +754,7 @@ private fun StandardBlockSectionPreview() {
     PreviewSurface {
         StandardBlockSection(
             BlockWithSets(
-                block = previewBlock("warmup", restSeconds = 60),
+                block = previewBlock(TrainingProtocol.WARM_UP, restSeconds = 60),
                 exerciseName = "Back Squat",
                 sets = listOf(previewSet(1, 1, "10", "40kg"), previewSet(1, 2, "5", "60kg")),
             ),
@@ -772,7 +762,7 @@ private fun StandardBlockSectionPreview() {
         StandardBlockSection(previewStandard)
         StandardBlockSection(
             BlockWithSets(
-                block = previewBlock("backoff", id = 3, restSeconds = 120, rpe = 8),
+                block = previewBlock(TrainingProtocol.BACK_OFF, id = 3, restSeconds = 120, rpe = 8),
                 exerciseName = "Back Squat",
                 sets = listOf(
                     previewSet(3, 1, "6", "100kg"),
@@ -790,20 +780,20 @@ private fun GroupBlockSectionPreview() {
     PreviewSurface {
         GroupBlockSection(
             BlockWithSets(
-                block = previewBlock("circuit", rounds = 2, restBetweenRoundsSeconds = 30, rpe = 8),
+                block = previewBlock(TrainingProtocol.CIRCUIT, rounds = 2, restBetweenRoundsSeconds = 30, rpe = 8),
                 children = listOf(
-                    BlockWithSets(previewBlock("normal", id = 2, parentId = 1), "Pull-ups", listOf(previewSet(2, 1, "10", "10kg"))),
-                    BlockWithSets(previewBlock("normal", id = 3, parentId = 1), "Push-ups", listOf(previewSet(3, 1, "10"))),
-                    BlockWithSets(previewBlock("normal", id = 4, parentId = 1), "Squats", listOf(previewSet(4, 1, "10", "30kg"))),
+                    BlockWithSets(previewBlock(TrainingProtocol.NORMAL, id = 2, parentId = 1), "Pull-ups", listOf(previewSet(2, 1, "10", "10kg"))),
+                    BlockWithSets(previewBlock(TrainingProtocol.NORMAL, id = 3, parentId = 1), "Push-ups", listOf(previewSet(3, 1, "10"))),
+                    BlockWithSets(previewBlock(TrainingProtocol.NORMAL, id = 4, parentId = 1), "Squats", listOf(previewSet(4, 1, "10", "30kg"))),
                 ),
             ),
         )
         GroupBlockSection(
             BlockWithSets(
-                block = previewBlock("superset", id = 5, rounds = 3, restBetweenRoundsSeconds = 90, rpe = 8),
+                block = previewBlock(TrainingProtocol.SUPERSET, id = 5, rounds = 3, restBetweenRoundsSeconds = 90, rpe = 8),
                 children = listOf(
-                    BlockWithSets(previewBlock("normal", id = 6, parentId = 5), "Bench Press", listOf(previewSet(6, 1, "8", "70kg"))),
-                    BlockWithSets(previewBlock("normal", id = 7, parentId = 5), "Bent Over Row", listOf(previewSet(7, 1, "8", "60kg"))),
+                    BlockWithSets(previewBlock(TrainingProtocol.NORMAL, id = 6, parentId = 5), "Bench Press", listOf(previewSet(6, 1, "8", "70kg"))),
+                    BlockWithSets(previewBlock(TrainingProtocol.NORMAL, id = 7, parentId = 5), "Bent Over Row", listOf(previewSet(7, 1, "8", "60kg"))),
                 ),
             ),
         )
@@ -816,7 +806,7 @@ private fun HoldBlockSectionPreview() {
     PreviewSurface {
         HoldBlockSection(
             BlockWithSets(
-                block = previewBlock("hold", restSeconds = 90, holdSeconds = 30, rpe = 8),
+                block = previewBlock(TrainingProtocol.HOLD, restSeconds = 90, holdSeconds = 30, rpe = 8),
                 exerciseName = "Front Lever Hold",
                 sets = listOf(
                     previewSet(1, 1, "3", "BW"),
@@ -834,7 +824,7 @@ private fun EmomBlockSectionPreview() {
     PreviewSurface {
         EmomBlockSection(
             BlockWithSets(
-                block = previewBlock("emom", rpe = 7),
+                block = previewBlock(TrainingProtocol.EMOM, rpe = 7),
                 exerciseName = "Kettlebell Swing",
                 sets = listOf(previewSet(1, 1, "12", "24kg", minutes = 10)),
             ),
@@ -848,7 +838,7 @@ private fun MetronomeBlockSectionPreview() {
     PreviewSurface {
         MetronomeBlockSection(
             BlockWithSets(
-                block = previewBlock("metronome", restSeconds = 90, rpe = 7, bpm = 60),
+                block = previewBlock(TrainingProtocol.METRONOME, restSeconds = 90, rpe = 7, bpm = 60),
                 exerciseName = "Tempo Push-ups",
                 sets = listOf(
                     previewSet(1, 1, "8", "BW"),

@@ -78,6 +78,7 @@ class EMOMTimer(
                     val emom = state as? ActiveProtocolState.Emom ?: return@update state
                     emom.copy(prepareSecondsLeft = 0)
                 }
+                audio.onTick(0L)
                 startRound(0)
             } catch (e: CancellationException) {
                 throw e

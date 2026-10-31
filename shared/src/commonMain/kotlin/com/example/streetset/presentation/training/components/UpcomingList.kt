@@ -8,6 +8,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.streetset.data.entities.Block
 import com.example.streetset.data.entities.PlannedSet
 import com.example.streetset.presentation.sessiondetail.model.BlockWithSets
+import com.example.streetset.presentation.sessiondetail.model.TrainingProtocol
 import com.example.streetset.presentation.training.model.WorkoutStep
 
 @Composable
@@ -28,9 +29,9 @@ fun UpcomingList(
 @Preview(showBackground = true)
 @Composable
 private fun UpcomingListPreview() {
-    val block1 = Block(id = 1, sessionId = 1, exerciseId = 1, position = 0, protocol = "WARM_UP", restSeconds = 60)
+    val block1 = Block(id = 1, sessionId = 1, exerciseId = 1, position = 0, protocol = TrainingProtocol.WARM_UP, restSeconds = 60)
     val set1 = PlannedSet(id = 1, blockId = 1, setNumber = 1, repsText = "5", loadText = "60")
-    val block2 = Block(id = 2, sessionId = 1, exerciseId = 2, position = 1, protocol = "BACK_OFF", restSeconds = 90, rpe = 7)
+    val block2 = Block(id = 2, sessionId = 1, exerciseId = 2, position = 1, protocol = TrainingProtocol.BACK_OFF, restSeconds = 90, rpe = 7)
     val set2 = PlannedSet(id = 2, blockId = 2, setNumber = 1, repsText = "8", loadText = "BW")
     val steps = listOf(
         WorkoutStep(
