@@ -12,7 +12,7 @@ private fun provideDataBase(): StreetSetDatabase =
         name = NSHomeDirectory() + "/Documents/" + DATABASE_NAME,
     )
         .setDriver(BundledSQLiteDriver())
-        .fallbackToDestructiveMigration(true)
+        .fallbackToDestructiveMigration(dropAllTables = true)
         .build()
 
 private inline fun <reified T : Any> Module.daoOf(
@@ -23,8 +23,6 @@ actual val databaseModule: Module = module {
     single { provideDataBase() }
 
     daoOf { it.exerciseDao() }
-    daoOf { it.programDao() }
-    daoOf { it.weekDao() }
     daoOf { it.sessionDao() }
     daoOf { it.blockDao() }
     daoOf { it.plannedSetDao() }

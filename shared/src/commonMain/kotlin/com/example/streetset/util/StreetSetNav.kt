@@ -14,8 +14,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import com.example.streetset.navigation.ProgramDetailRoute
-import com.example.streetset.navigation.ProgramsRoute
+import com.example.streetset.navigation.CalendarRoute
 import com.example.streetset.navigation.SessionDetailRoute
 import com.example.streetset.navigation.SettingsRoute
 import com.example.streetset.navigation.StatsRoute
@@ -37,20 +36,19 @@ object StreetSetNav {
     }
 
     fun NavBackStackEntry?.isDetail(): Boolean =
-        this?.destination?.hasRoute<ProgramDetailRoute>() == true ||
-                this?.destination?.hasRoute<SessionDetailRoute>() == true ||
-                this?.destination?.hasRoute<TrainingSessionRoute>() == true
+        this?.destination?.hasRoute<SessionDetailRoute>() == true ||
+        this?.destination?.hasRoute<TrainingSessionRoute>() == true
 
     fun NavBackStackEntry?.toTab(): Tab? = when {
         this == null -> null
-        destination.hasRoute<ProgramsRoute>() -> Tab.Programs
+        destination.hasRoute<CalendarRoute>() -> Tab.Calendar
         destination.hasRoute<StatsRoute>() -> Tab.Stats
         destination.hasRoute<SettingsRoute>() -> Tab.Settings
         else -> null
     }
 
-    fun NavBackStackEntry?.tabOrPrograms(): Tab? =
-        toTab() ?: if (isDetail()) Tab.Programs else null
+    fun NavBackStackEntry?.tabOrCalendar(): Tab? =
+        toTab() ?: if (isDetail()) Tab.Calendar else null
 
     // Bottom bar transitions
     val bottomBarEnter: EnterTransition = slideInVertically(
@@ -70,6 +68,7 @@ object StreetSetNav {
                 initialOffsetX = { it },
                 animationSpec = tween(DetailTransitionDurationMillis),
             ) + fadeIn(animationSpec = tween(DetailTransitionDurationMillis))
+
             else -> {
                 val direction = tabDirection()
                 slideInHorizontally(
@@ -86,6 +85,7 @@ object StreetSetNav {
                 targetOffsetX = { -it / 8 },
                 animationSpec = tween(DetailTransitionDurationMillis),
             ) + fadeOut(animationSpec = tween(DetailTransitionDurationMillis))
+
             else -> {
                 val direction = tabDirection()
                 slideOutHorizontally(
@@ -102,6 +102,7 @@ object StreetSetNav {
                 initialOffsetX = { -it / 8 },
                 animationSpec = tween(DetailTransitionDurationMillis),
             ) + fadeIn(animationSpec = tween(DetailTransitionDurationMillis))
+
             else -> {
                 val direction = tabDirection()
                 slideInHorizontally(
@@ -118,6 +119,7 @@ object StreetSetNav {
                 targetOffsetX = { it },
                 animationSpec = tween(DetailTransitionDurationMillis),
             ) + fadeOut(animationSpec = tween(DetailTransitionDurationMillis))
+
             else -> {
                 val direction = tabDirection()
                 slideOutHorizontally(
@@ -142,8 +144,8 @@ object StreetSetNav {
         initialState.isDetail() && targetState.isDetail() && initialState.destination.route != targetState.destination.route
 
     private fun AnimatedContentTransitionScope<NavBackStackEntry>.tabDirection(): Int {
-        val from = initialState.tabOrPrograms()?.index ?: 0
-        val to = targetState.tabOrPrograms()?.index ?: 0
+        val from = initialState.tabOrCalendar()?.index ?: 0
+        val to = targetState.tabOrCalendar()?.index ?: 0
         return if (to >= from) 1 else -1
     }
 }

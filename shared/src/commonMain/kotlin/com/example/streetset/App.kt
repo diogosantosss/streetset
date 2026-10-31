@@ -21,15 +21,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.example.streetset.navigation.ProgramDetailRoute
-import com.example.streetset.navigation.ProgramsRoute
+import com.example.streetset.navigation.CalendarRoute
 import com.example.streetset.navigation.SessionDetailRoute
 import com.example.streetset.navigation.SettingsRoute
 import com.example.streetset.navigation.StatsRoute
 import com.example.streetset.navigation.Tab
 import com.example.streetset.navigation.TrainingSessionRoute
-import com.example.streetset.presentation.programdetail.ProgramDetailScreen
-import com.example.streetset.presentation.programs.ProgramsScreen
+import com.example.streetset.presentation.calendar.CalendarScreen
 import com.example.streetset.presentation.sessiondetail.SessionDetailScreen
 import com.example.streetset.presentation.settings.SettingsScreen
 import com.example.streetset.presentation.settings.SettingsViewModel
@@ -46,7 +44,7 @@ import com.example.streetset.util.StreetSetNav.isDetail
 import com.example.streetset.util.StreetSetNav.navigateToTab
 import com.example.streetset.util.StreetSetNav.popEnter
 import com.example.streetset.util.StreetSetNav.popExit
-import com.example.streetset.util.StreetSetNav.tabOrPrograms
+import com.example.streetset.util.StreetSetNav.tabOrCalendar
 import dev.chrisbanes.haze.rememberHazeState
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -75,27 +73,31 @@ private fun StreetSetApp(
     ) {
         NavHost(
             navController = navController,
-            startDestination = ProgramsRoute,
+            startDestination = CalendarRoute,
             modifier = Modifier.fillMaxSize(),
             enterTransition = enter,
             exitTransition = exit,
             popEnterTransition = popEnter,
             popExitTransition = popExit,
         ) {
-            composable<ProgramsRoute> { ProgramsScreen(navController = navController, hazeState = hazeState) }
-            composable<StatsRoute> { StatsScreen() }
-            composable<SettingsRoute> { SettingsScreen() }
-            composable<ProgramDetailRoute> { entry: NavBackStackEntry ->
-                val route = entry.toRoute<ProgramDetailRoute>()
-                ProgramDetailScreen(
-                    programId = route.programId,
-                    onBack = { navController.popBackStack() },
+            /**
+             * Bottom Bar Navigation Routes [CalendarRoute], [StatsRoute] & [SettingsRoute].
+             *
+             * These tabs are managed by NavHostController and [CalendarRoute] contains followup routes: [SessionDetailRoute] & [TrainingSessionRoute].
+             */
+            composable<CalendarRoute> {
+                CalendarScreen(
                     hazeState = hazeState,
-                    onSessionClick = { session ->
-                        navController.navigate(SessionDetailRoute(sessionId = session.id ?: 0, title = session.name))
+                    onSessionClick = { sessionId, title ->
+                        navController.navigate(SessionDetailRoute(sessionId = sessionId, title = title))
                     },
                 )
             }
+
+            composable<StatsRoute> { StatsScreen() }
+
+            composable<SettingsRoute> { SettingsScreen() }
+
             composable<SessionDetailRoute> { entry: NavBackStackEntry ->
                 val route = entry.toRoute<SessionDetailRoute>()
                 SessionDetailScreen(
@@ -105,6 +107,7 @@ private fun StreetSetApp(
                     hazeState = hazeState,
                 )
             }
+
             composable<TrainingSessionRoute> { entry: NavBackStackEntry ->
                 val route = entry.toRoute<TrainingSessionRoute>()
                 TrainingSessionScreen(
@@ -126,7 +129,7 @@ private fun StreetSetApp(
                 .navigationBarsPadding(),
         ) {
             BottomTabBar(
-                selectedTab = backStackEntry.tabOrPrograms() ?: Tab.Programs,
+                selectedTab = backStackEntry.tabOrCalendar() ?: Tab.Calendar,
                 onTabSelected = { tab -> navController.navigateToTab(tab) },
                 hazeState = hazeState,
             )

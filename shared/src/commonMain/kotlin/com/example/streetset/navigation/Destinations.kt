@@ -3,7 +3,7 @@ package com.example.streetset.navigation
 import kotlinx.serialization.Serializable
 
 @Serializable
-data object ProgramsRoute
+data object CalendarRoute
 
 @Serializable
 data object StatsRoute
@@ -11,10 +11,6 @@ data object StatsRoute
 @Serializable
 data object SettingsRoute
 
-@Serializable
-data class ProgramDetailRoute(
-    val programId: Int,
-)
 
 @Serializable
 data class SessionDetailRoute(

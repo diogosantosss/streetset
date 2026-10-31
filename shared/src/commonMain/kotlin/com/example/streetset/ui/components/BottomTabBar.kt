@@ -147,7 +147,7 @@ private fun BottomTabBarPreview() {
                 .padding(16.dp)
         ) {
             BottomTabBar(
-                selectedTab = Tab.Programs,
+                selectedTab = Tab.Calendar,
                 onTabSelected = {},
             )
         }

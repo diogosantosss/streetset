@@ -1,11 +1,8 @@
 package com.example.streetset.di
 
 import com.example.streetset.data.DatabaseSeeder
-import com.example.streetset.presentation.programdetail.ProgramDetailViewModel
-import com.example.streetset.presentation.programdetail.CreateSessionViewModel
-import com.example.streetset.presentation.programdetail.SessionOptionsViewModel
-import com.example.streetset.presentation.programs.ProgramsViewModel
-import com.example.streetset.presentation.programs.SheetViewModel
+import com.example.streetset.presentation.calendar.CalendarViewModel
+import com.example.streetset.presentation.calendar.CreateSessionCalendarViewModel
 import com.example.streetset.presentation.sessiondetail.AddBlockViewModel
 import com.example.streetset.presentation.sessiondetail.BlockOptionsViewModel
 import com.example.streetset.presentation.sessiondetail.SessionBlocksViewModel
@@ -25,16 +22,15 @@ val appModule = module {
     singleOf(::DatabaseSeeder)
     singleOf(::ThemeRepository)
 
-    viewModelOf(::ProgramsViewModel)
-    viewModelOf(::SheetViewModel)
     viewModelOf(::SettingsViewModel)
-    viewModelOf(::ProgramDetailViewModel)
-    viewModelOf(::CreateSessionViewModel)
-    viewModelOf(::SessionOptionsViewModel)
     viewModel { (sessionId: Int) -> SessionBlocksViewModel(sessionId) }
     viewModel { (sessionId: Int) -> AddBlockViewModel(sessionId) }
     viewModelOf(::BlockOptionsViewModel)
     viewModel { (sessionId: Int) -> TrainingSessionViewModel(sessionId) }
+
+    //calendar test
+    viewModelOf(::CalendarViewModel)
+    viewModelOf(::CreateSessionCalendarViewModel)
 }
 
 fun initKoin(appDeclaration: KoinAppDeclaration = {}) {

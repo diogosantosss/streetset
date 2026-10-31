@@ -1,6 +1,7 @@
 package com.example.streetset.navigation
 
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.composables.icons.lucide.Calendar
 import com.composables.icons.lucide.ChartColumn
 import com.composables.icons.lucide.Dumbbell
 import com.composables.icons.lucide.Lucide
@@ -12,7 +13,7 @@ enum class Tab(
     val route: Any,
     val index: Int,
 ) {
-    Programs("Programs", Lucide.Dumbbell, ProgramsRoute, 0),
+    Calendar("Calendar", Lucide.Calendar, CalendarRoute, 0),
     Stats("Stats", Lucide.ChartColumn, StatsRoute, 1),
     Settings("Settings", Lucide.Settings, SettingsRoute, 2),
 }

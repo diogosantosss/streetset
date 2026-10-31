@@ -13,7 +13,7 @@ private fun provideDataBase(context: Context): StreetSetDatabase =
         StreetSetDatabase::class.java,
         DATABASE_NAME,
     )
-        .fallbackToDestructiveMigration(true)
+        .fallbackToDestructiveMigration(dropAllTables = true)
         .build()
 
 private inline fun <reified T : Any> Module.daoOf(
@@ -24,8 +24,6 @@ actual val databaseModule: Module = module {
     single { provideDataBase(androidContext()) }
 
     daoOf { it.exerciseDao() }
-    daoOf { it.programDao() }
-    daoOf { it.weekDao() }
     daoOf { it.sessionDao() }
     daoOf { it.blockDao() }
     daoOf { it.plannedSetDao() }
