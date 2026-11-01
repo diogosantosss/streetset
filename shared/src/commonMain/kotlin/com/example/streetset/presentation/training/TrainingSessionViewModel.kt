@@ -14,6 +14,7 @@ import com.example.streetset.presentation.training.model.ActiveProtocolState
 import com.example.streetset.presentation.training.model.WorkoutStep
 import com.example.streetset.presentation.training.model.restAfterSeconds
 import com.example.streetset.presentation.training.timer.EMOMTimer
+import com.example.streetset.presentation.training.timer.HoldTimer
 import com.example.streetset.util.Time
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.Job
@@ -39,6 +40,7 @@ class TrainingSessionViewModel(
     private val stopwatch = Stopwatch()
     private val restTimer = RestTimer()
     private val emomTimer = EMOMTimer(viewModelScope)
+    private val holdTimer = HoldTimer(viewModelScope)
 
     private var timerJob: Job? = null
     private var restJob: Job? = null
@@ -53,8 +55,8 @@ class TrainingSessionViewModel(
      * only while there are subscribers, saving cycles when the screen is hidden.
      */
     val uiState: StateFlow<TrainingSessionUiState> =
-        combine(_uiState, emomTimer.state) { base, timerState ->
-            base.copy(protocol = resolveProtocol(base, timerState))
+        combine(_uiState, emomTimer.state, holdTimer.state) { base, emomState, holdState ->
+            base.copy(protocol = resolveProtocol(base, emomState, holdState))
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -66,14 +68,15 @@ class TrainingSessionViewModel(
         startSessionTimer()
         loadQueue()
         emomTimer.onAllRoundsCompleted = ::onEmomCompleted
+        holdTimer.onCompleted = ::onHoldCompleted
     }
 
     // region State helpers
 
     /** Applies [transform] to the current state and publishes the result. */
-    private inline fun updateState(transform: (TrainingSessionUiState) -> TrainingSessionUiState) {
-        _uiState.value = transform(_uiState.value)
-    }
+    private inline fun updateState(
+        transform: (TrainingSessionUiState) -> TrainingSessionUiState
+    ) { _uiState.value = transform(_uiState.value) }
 
     // endregion
 
@@ -86,13 +89,15 @@ class TrainingSessionViewModel(
      */
     private fun resolveProtocol(
         base: TrainingSessionUiState,
-        timerState: ActiveProtocolState,
+        emomState: ActiveProtocolState,
+        holdState: ActiveProtocolState,
     ): ActiveProtocolState {
-        val step = (base.phase as? TrainingPhase.Working)?.step
-        return if (step != null && step.protocol.isGroup) {
-            ActiveProtocolState.Group.from(step)
-        } else {
-            timerState
+        val step = (base.phase as? TrainingPhase.Working)?.step ?: return ActiveProtocolState.Idle
+        return when {
+            step.protocol.isGroup -> ActiveProtocolState.Group.from(step)
+            step.isEmom -> emomState
+            step.isHold -> holdState
+            else -> ActiveProtocolState.Idle
         }
     }
 
@@ -197,6 +202,7 @@ class TrainingSessionViewModel(
         restJob?.cancel()
         restJob = null
         emomTimer.reset()
+        holdTimer.reset()
 
         val step = _uiState.value.queue.getOrNull(index)
         if (step == null) {
@@ -212,6 +218,7 @@ class TrainingSessionViewModel(
         }
 
         if (step.isEmom) emomTimer.configure(step)
+        if (step.isHold) holdTimer.configure(step)
 
         updateState {
             it.copy(
@@ -277,7 +284,7 @@ class TrainingSessionViewModel(
             is TrainingPhase.Rest -> skipRest()
 
             is TrainingPhase.Working -> {
-                val protocol = resolveProtocol(state, emomTimer.state.value)
+                val protocol = resolveProtocol(state, emomTimer.state.value, holdTimer.state.value)
                 if (!protocol.canComplete) return
                 advanceAfterStep(phase.step)
             }
@@ -319,8 +326,14 @@ class TrainingSessionViewModel(
      * the other protocols are advanced manually.
      */
     fun startActiveProtocol() {
-        when (val protocol = emomTimer.state.value) {
+        val protocol = resolveProtocol(
+            _uiState.value,
+            emomTimer.state.value,
+            holdTimer.state.value,
+        )
+        when (protocol) {
             is ActiveProtocolState.Emom -> emomTimer.start()
+            is ActiveProtocolState.Hold -> holdTimer.start()
             else -> Napier.w("startActiveProtocol called for unsupported protocol: $protocol", tag = TAG)
         }
     }
@@ -334,6 +347,11 @@ class TrainingSessionViewModel(
         advanceAfterStep(step)
     }
 
+    private fun onHoldCompleted() {
+        val step = (_uiState.value.phase as? TrainingPhase.Working)?.step ?: return
+        advanceAfterStep(step)
+    }
+
     // endregion
 
     override fun onCleared() {
@@ -341,6 +359,7 @@ class TrainingSessionViewModel(
         timerJob?.cancel()
         restJob?.cancel()
         emomTimer.cancel()
+        holdTimer.cancel()
     }
 
     private fun formatTime(minutes: Long, seconds: Long): String {

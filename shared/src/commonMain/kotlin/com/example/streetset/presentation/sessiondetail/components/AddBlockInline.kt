@@ -203,6 +203,7 @@ private fun BlockComposer(
                     )
                     SetsSection(
                         sets = draft.sets,
+                        hideReps = draft.protocol == TrainingProtocol.HOLD,
                         onSetsChange = { onDraftChange(draft.copy(sets = it)) },
                     )
                     DetailsSection(draft = draft, onDraftChange = onDraftChange)
@@ -351,6 +352,7 @@ private fun ExerciseSection(
 @Composable
 private fun SetsSection(
     sets: List<PlannedSetDraft>,
+    hideReps: Boolean = false,
     onSetsChange: (List<PlannedSetDraft>) -> Unit,
 ) {
     FormSection(caption = "SETS") {
@@ -358,6 +360,7 @@ private fun SetsSection(
             SetFieldRow(
                 number = index + 1,
                 set = set,
+                hideReps = hideReps,
                 canDelete = sets.size > 1,
                 onChange = { changed ->
                     onSetsChange(sets.mapIndexed { itemIndex, item -> if (itemIndex == index) changed else item })
@@ -374,6 +377,7 @@ private fun SetsSection(
 private fun SetFieldRow(
     number: Int,
     set: PlannedSetDraft,
+    hideReps: Boolean = false,
     canDelete: Boolean,
     onChange: (PlannedSetDraft) -> Unit,
     onDelete: () -> Unit,
@@ -393,20 +397,22 @@ private fun SetFieldRow(
             color = colors.textSecondary,
             modifier = Modifier.width(52.dp),
         )
-        InlineField(
-            value = set.reps,
-            onValueChange = { onChange(set.copy(reps = it)) },
-            placeholder = "Reps",
-            modifier = Modifier.weight(1f),
-        )
-        VerticalHairline()
+        if (!hideReps) {
+            InlineField(
+                value = set.reps,
+                onValueChange = { onChange(set.copy(reps = it)) },
+                placeholder = "Reps",
+                modifier = Modifier.weight(1f),
+            )
+            VerticalHairline()
+        }
         InlineField(
             value = set.load,
             onValueChange = { onChange(set.copy(load = it)) },
             placeholder = "Load",
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 12.dp),
+                .padding(start = if (hideReps) 0.dp else 12.dp),
         )
         if (canDelete) {
             IconButton(icon = Lucide.Trash2, tint = colors.textTertiary, onClick = onDelete)
@@ -429,20 +435,25 @@ private fun DetailsSection(
     val protocol = draft.protocol
     val restBetweenLabel = when (protocol) {
         TrainingProtocol.SUPERSET -> "Rest between supersets"
-        TrainingProtocol.EMOM -> "Rest between rounds"
         else -> "Rest between rounds"
     }
-    val restAfterLabel = if (protocol == TrainingProtocol.EMOM) "Rest after EMOM" else "Rest"
+    val restAfterLabel = when (protocol) {
+        TrainingProtocol.EMOM -> "Rest after EMOM"
+        TrainingProtocol.CIRCUIT -> "Rest after circuit"
+        TrainingProtocol.SUPERSET -> "Rest after superset"
+        else -> "Rest"
+    }
 
     val rows = buildList {
         if (protocol.needsRounds) add(DetailRow("Rounds", draft.rounds, "3") { onDraftChange(draft.copy(rounds = it)) })
-        if (protocol == TrainingProtocol.HOLD) add(DetailRow("Hold", draft.holdSeconds, "30s") { onDraftChange(draft.copy(holdSeconds = it)) })
+        if (protocol == TrainingProtocol.HOLD) add(DetailRow("Hold", draft.holdSeconds, "30") { onDraftChange(draft.copy(holdSeconds = it)) })
         if (protocol == TrainingProtocol.METRONOME) add(DetailRow("BPM", draft.bpm, "60") { onDraftChange(draft.copy(bpm = it)) })
-        if (protocol != TrainingProtocol.HOLD && !protocol.isGroup) {
-            add(DetailRow(restAfterLabel, draft.restSeconds, "90s") { onDraftChange(draft.copy(restSeconds = it)) })
-        }
+
+        // Rest after the whole block — applies to every protocol, groups included.
+        add(DetailRow(restAfterLabel, draft.restSeconds, "90") { onDraftChange(draft.copy(restSeconds = it)) })
+
         if (protocol.needsRounds) {
-            add(DetailRow(restBetweenLabel, draft.restBetweenRoundsSeconds, "30s") { onDraftChange(draft.copy(restBetweenRoundsSeconds = it)) })
+            add(DetailRow(restBetweenLabel, draft.restBetweenRoundsSeconds, "30") { onDraftChange(draft.copy(restBetweenRoundsSeconds = it)) })
         }
         add(DetailRow("RPE", draft.rpe, "8") { onDraftChange(draft.copy(rpe = it)) })
     }

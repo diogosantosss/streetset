@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.composables.icons.lucide.Dumbbell
 import com.composables.icons.lucide.Gauge
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Repeat
@@ -167,22 +168,33 @@ private fun GroupExerciseRow(
             color = accent,
             modifier = Modifier.width(28.dp),
         )
-        Text(
-            text = child.exerciseName ?: "-",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Medium,
-            color = colors.textPrimary,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        Spacer(modifier = Modifier.width(12.dp))
+
         Row(
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f),
         ) {
-            reps?.let { IconText(Lucide.Repeat, it, colors.textPrimary) }
-            load?.let { IconText(Lucide.Scale, it, colors.textSecondary) }
+            if (reps != null) {
+                Text(
+                    text = reps,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.textPrimary,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text(
+                text = child.exerciseName ?: "-",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Medium,
+                color = colors.textPrimary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        if (load != null) {
+            Spacer(modifier = Modifier.width(12.dp))
+            IconText(Lucide.Dumbbell, load, colors.textSecondary)
         }
     }
 }
@@ -254,7 +266,8 @@ private fun formatGroupLoad(raw: String?): String? {
     val load = raw?.trim().orEmpty()
     return when {
         load.isEmpty() || load == "-" -> null
-        load.replace(",", ".").toDoubleOrNull() != null -> "$load kg"
+        load.uppercase() == "BW" -> null
+        load.replace(",", ".").toDoubleOrNull() != null -> "${load}kg"
         else -> load
     }
 }

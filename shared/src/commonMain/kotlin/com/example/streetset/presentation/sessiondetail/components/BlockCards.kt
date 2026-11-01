@@ -144,7 +144,7 @@ fun GroupBlockSection(
         block = block,
         title = null,
         isBusy = isBusy,
-        footer = block.rpe?.let { listOf(MetaItem(Lucide.Gauge, "RPE $it")) }.orEmpty(),
+        footer = metaItems(block),
         modifier = modifier,
         onClick = onClick,
         onLongClick = onLongClick,
@@ -202,9 +202,12 @@ fun GroupBlockSection(
 @Composable
 private fun GroupExerciseRow(label: String, child: BlockWithSets, color: Color) {
     val colors = LocalAppColors.current
-    val summary = child.sets.joinToString("  ·  ") { set ->
-        listOfNotNull(set.repsText, set.loadText).joinToString(" × ")
-    }
+    val set = child.sets.firstOrNull()
+    val reps = set?.repsText?.trim()?.takeUnless { it.isNullOrEmpty() }
+    val load = set?.loadText
+        ?.trim()
+        ?.takeUnless { it.isNullOrEmpty() || it.uppercase() == "BW" }
+        ?.let { formatLoad(it) ?: it }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -219,21 +222,33 @@ private fun GroupExerciseRow(label: String, child: BlockWithSets, color: Color) 
             color = color,
             modifier = Modifier.width(20.dp),
         )
-        Text(
-            text = child.exerciseName ?: "Exercise",
-            fontSize = 14.sp,
-            color = colors.textPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.weight(1f),
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = summary,
-            fontSize = 13.sp,
-            color = colors.textSecondary,
-            maxLines = 1,
-        )
+        ) {
+            if (reps != null) {
+                Text(
+                    text = reps,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.textPrimary,
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+            }
+            Text(
+                text = child.exerciseName ?: "Exercise",
+                fontSize = 14.sp,
+                color = colors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        if (load != null) {
+            Spacer(modifier = Modifier.width(8.dp))
+            IconValue(Lucide.Dumbbell, load, fontSize = 13.sp)
+        }
     }
 }
 
@@ -258,7 +273,7 @@ fun HoldBlockSection(
         onLongClick = onLongClick,
     ) {
         item.block.holdSeconds?.let {
-            HeroRow(Lucide.Hourglass, formatSeconds(it), "HOLD PER REP", color)
+            HeroRow(Lucide.Hourglass, formatSeconds(it), "HOLD TIME", color)
             InsetDivider()
         }
         SetRows(item.sets)
@@ -600,7 +615,7 @@ private fun metaItems(block: Block, includeRest: Boolean = true): List<MetaItem>
 private fun formatLoad(raw: String?): String? {
     val load = raw?.trim().orEmpty()
     if (load.isEmpty()) return null
-    return if (load.replace(",", ".").toDoubleOrNull() != null) "$load kg" else load
+    return if (load.replace(",", ".").toDoubleOrNull() != null) "${load}kg" else load
 }
 
 private fun String.normalizedProtocol(): String =

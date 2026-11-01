@@ -39,6 +39,7 @@ sealed interface ActiveProtocolState {
         val uiState: HoldUiState = HoldUiState.IDLE,
         val secondsLeft: Int = 0,
         val targetSeconds: Int = 0,
+        val prepareSecondsLeft: Int = 5,   // ← novo (mesmo valor do EMOM)
     ) : ActiveProtocolState {
         override val canComplete: Boolean get() = uiState == HoldUiState.COMPLETED
 
@@ -82,15 +83,6 @@ sealed interface ActiveProtocolState {
 enum class HoldUiState {
     IDLE,
     RUNNING,
+    PREPARE_COUNTDOWN,
     COMPLETED,
-}
-
-/** Rest after finishing this step. Between rounds of a group it is the rest between rounds. */
-fun WorkoutStep.restAfterSeconds(): Int {
-    val block = blockWithSets.block
-    return when {
-        !protocol.isGroup -> restSeconds
-        setIndex < totalSetsInBlock -> block.restBetweenRoundsSeconds
-        else -> block.restSeconds
-    }
 }

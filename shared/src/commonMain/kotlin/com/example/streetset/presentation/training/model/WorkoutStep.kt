@@ -48,6 +48,9 @@ data class WorkoutStep(
     val isEmom: Boolean
         get() = protocol == TrainingProtocol.EMOM
 
+    val isHold: Boolean
+        get() = protocol == TrainingProtocol.HOLD
+
     val emomRounds: Int
         get() {
             val blockRounds = blockWithSets.block.rounds
@@ -74,4 +77,18 @@ fun formatRestSecondsShort(seconds: Int): String {
     val m = seconds / 60
     val s = seconds % 60
     return if (m > 0 && s > 0) "${m}m ${s}s" else if (m > 0) "${m}m" else "${s}s"
+}
+
+fun WorkoutStep.holdTargetSeconds(): Int {
+    val block = blockWithSets.block
+    return block.holdSeconds?.takeIf { it > 0 } ?: 30
+}
+
+fun WorkoutStep.restAfterSeconds(): Int {
+    val block = blockWithSets.block
+    return when {
+        !protocol.isGroup -> restSeconds
+        setIndex < totalSetsInBlock -> block.restBetweenRoundsSeconds
+        else -> block.restSeconds
+    }
 }

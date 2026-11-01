@@ -42,6 +42,7 @@ import kotlinx.coroutines.launch
 import com.example.streetset.presentation.training.components.CurrentSetPhase
 import com.example.streetset.presentation.training.components.EmomPhase
 import com.example.streetset.presentation.training.components.FinishedPhase
+import com.example.streetset.presentation.training.components.HoldPhase
 import com.example.streetset.presentation.training.components.RestPhase
 import com.example.streetset.presentation.training.components.TrainingBottomBar
 import com.example.streetset.presentation.training.components.UpcomingRow
@@ -138,6 +139,15 @@ fun TrainingSessionScreen(
                                         onStart = viewModel::startActiveProtocol,
                                     )
                                 }
+
+                                is ActiveProtocolState.Hold -> HoldPhase(
+                                    step = current,
+                                    holdUiState = protocol.uiState,
+                                    secondsLeft = protocol.secondsLeft,
+                                    targetSeconds = protocol.targetSeconds,
+                                    prepareSecondsLeft = protocol.prepareSecondsLeft,
+                                    onStart = viewModel::startActiveProtocol,
+                                )
 
                                 is ActiveProtocolState.Group -> CurrentGroupPhase(step = current, group = protocol)
 

@@ -15,8 +15,12 @@ data class TrainingBlockDraft(
 
 /** Whether the draft has the minimum needed to be saved. The ViewModel can reuse this. */
 val TrainingBlockDraft.isValid: Boolean
-    get() = if (protocol.isGroup) {
-        exercises.isNotEmpty() && exercises.all { it.name.isNotBlank() }
-    } else {
-        exerciseName.isNotBlank()
+    get() = when {
+        protocol.isGroup ->
+            exercises.isNotEmpty() && exercises.all { it.name.isNotBlank() }
+
+        protocol == TrainingProtocol.HOLD ->
+            exerciseName.isNotBlank() && parseSeconds(holdSeconds) != null
+
+        else -> exerciseName.isNotBlank()
     }

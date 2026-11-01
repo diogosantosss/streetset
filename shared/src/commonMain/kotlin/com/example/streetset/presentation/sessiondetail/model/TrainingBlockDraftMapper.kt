@@ -13,22 +13,19 @@ fun TrainingBlockDraft.toBlock(
     sessionId: Int,
     position: Int,
     exerciseId: Int?,
-): Block {
-    val usesRest = !protocol.isGroup && protocol != TrainingProtocol.HOLD
-
-    return Block(
-        sessionId = sessionId,
-        position = position,
-        protocol = protocol,
-        exerciseId = exerciseId,
-        restSeconds = if (usesRest) parseSeconds(restSeconds) ?: 0 else 0,
-        rounds = if (protocol.needsRounds) parsePositiveInt(rounds) else null,
-        restBetweenRoundsSeconds = if (protocol.needsRounds) parseSeconds(restBetweenRoundsSeconds) ?: 0 else 0,
-        holdSeconds = if (protocol == TrainingProtocol.HOLD) parseSeconds(holdSeconds) else null,
-        rpe = parsePositiveInt(rpe)?.coerceIn(1, 10),
-        bpm = if (protocol == TrainingProtocol.METRONOME) parsePositiveInt(bpm) else null,
-    )
-}
+): Block = Block(
+    sessionId = sessionId,
+    position = position,
+    protocol = protocol,
+    exerciseId = exerciseId,
+    restSeconds = parseSeconds(restSeconds) ?: 0,
+    rounds = if (protocol.needsRounds) parsePositiveInt(rounds) else null,
+    restBetweenRoundsSeconds =
+        if (protocol.needsRounds) parseSeconds(restBetweenRoundsSeconds) ?: 0 else 0,
+    holdSeconds = if (protocol == TrainingProtocol.HOLD) parseSeconds(holdSeconds) else null,
+    rpe = parsePositiveInt(rpe)?.coerceIn(1, 10),
+    bpm = if (protocol == TrainingProtocol.METRONOME) parsePositiveInt(bpm) else null,
+)
 
 fun PlannedSetDraft.toPlannedSet(blockId: Int, setNumber: Int): PlannedSet = PlannedSet(
     blockId = blockId,
