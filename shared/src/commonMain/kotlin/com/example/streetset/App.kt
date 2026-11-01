@@ -104,7 +104,7 @@ private fun StreetSetApp(
                 )
             }
 
-            composable<StatsRoute> { StatsScreen() }
+            composable<StatsRoute> { StatsScreen(hazeState = hazeState) }
 
             composable<SettingsRoute> { SettingsScreen() }
 

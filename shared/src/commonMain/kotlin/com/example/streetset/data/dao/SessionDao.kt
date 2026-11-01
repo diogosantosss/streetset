@@ -6,18 +6,10 @@ import androidx.room3.Insert
 import androidx.room3.Query
 import androidx.room3.Update
 import com.example.streetset.data.entities.Session
+import com.example.streetset.data.entities.SessionLog
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
-
-data class DaySummary(val date: LocalDate, val total: Int, val completed: Int)
-
-data class DaySession(
-    val id: Int,
-    val name: String,
-    val blockCount: Int,
-    val completed: Boolean,
-    val durationSeconds: Int?,
-)
+import kotlinx.datetime.LocalDateTime
 
 @Dao
 interface SessionDao {
@@ -69,3 +61,13 @@ interface SessionDao {
     @Delete
     suspend fun delete(session: Session)
 }
+
+data class DaySession(
+    val id: Int,
+    val name: String,
+    val blockCount: Int,
+    val completed: Boolean,
+    val durationSeconds: Int?,
+)
+
+data class DaySummary(val date: LocalDate, val total: Int, val completed: Int)
