@@ -64,6 +64,7 @@ fun TrainingSessionScreen(
     title: String,
     hazeState: HazeState,
     onBack: () -> Unit,
+    onFinish: () -> Unit,
     viewModel: TrainingSessionViewModel = koinViewModel { parametersOf(sessionId) },
 ) {
     val colors = LocalAppColors.current
@@ -158,7 +159,17 @@ fun TrainingSessionScreen(
                     }
 
                     TrainingPhase.Finished -> {
-                        FinishedPhase()
+                        FinishedPhase(
+                            sessionTitle = title,
+                            startedAtMillis = uiState.startedAtMillis,
+                            finishedAtMillis = uiState.finishedAtMillis,
+                            elapsedSeconds = uiState.elapsedSeconds,
+                            setsCompleted = uiState.setsCompleted,
+                            totalReps = uiState.totalReps,
+                            volumeKg = uiState.volumeKg,
+                            notes = uiState.notes,
+                            onNotesChange = viewModel::onNotesChange,
+                        )
                     }
                 }
             }
@@ -184,7 +195,8 @@ fun TrainingSessionScreen(
                         key = { _, step -> "tl_${step.blockWithSets.block.id ?: 0}_${step.set.id ?: step.setIndex}_${step.setIndex}" },
                     ) { index, step ->
                         val rowState = when {
-                            index < uiState.currentIndex -> UpcomingRowState.Done
+                            index < uiState.currentIndex ||
+                                (uiState.awaitingFinish && index == uiState.currentIndex) -> UpcomingRowState.Done
                             index == uiState.currentIndex -> UpcomingRowState.Current
                             else -> UpcomingRowState.Upcoming
                         }
@@ -216,38 +228,49 @@ fun TrainingSessionScreen(
         }
 
         TopBar(
-            title = uiState.sessionTimer,
+            title = if (uiState.phase is TrainingPhase.Finished) title else uiState.sessionTimer,
             showBack = true,
-            onBackClick = { showExitConfirm = true },
+            onBackClick = {
+                if (uiState.phase is TrainingPhase.Finished) {
+                    viewModel.saveAndExit(onFinish)
+                } else {
+                    showExitConfirm = true
+                }
+            },
             hazeState = hazeState,
             scrolled = scrolled,
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
-        if (uiState.phase !is TrainingPhase.Finished) {
-            val showBottomBar = when (uiState.phase) {
-                is TrainingPhase.Rest -> true
-                is TrainingPhase.Working -> uiState.protocol.canComplete
-                else -> false
-            }
-
-            TrainingBottomBar(
-                isSessionPaused = uiState.sessionPaused,
-                actionText = when {
-                    uiState.phase is TrainingPhase.Rest -> "Skip rest"
-                    uiState.protocol is ActiveProtocolState.Group -> "Complete round"
-                    else -> "Complete set"
-                },
-                onPauseClick = viewModel::togglePause,
-                onActionClick = viewModel::onPrimaryAction,
-                hazeState = hazeState,
-                isVisible = showBottomBar,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(horizontal = 24.dp)
-                    .navigationBarsPadding(),
-            )
+        val isFinished = uiState.phase is TrainingPhase.Finished
+        val showBottomBar = when (uiState.phase) {
+            is TrainingPhase.Finished -> true
+            is TrainingPhase.Rest -> true
+            is TrainingPhase.Working -> uiState.awaitingFinish || uiState.protocol.canComplete
+            else -> false
         }
+
+        TrainingBottomBar(
+            isSessionPaused = uiState.sessionPaused,
+            actionText = when {
+                isFinished -> "Back to calendar"
+                uiState.awaitingFinish -> "Finish"
+                uiState.phase is TrainingPhase.Rest -> "Skip rest"
+                uiState.protocol is ActiveProtocolState.Group -> "Complete round"
+                else -> "Complete set"
+            },
+            showPause = !isFinished,
+            onPauseClick = viewModel::togglePause,
+            onActionClick = {
+                if (isFinished) viewModel.saveAndExit(onFinish) else viewModel.onPrimaryAction()
+            },
+            hazeState = hazeState,
+            isVisible = showBottomBar,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp)
+                .navigationBarsPadding(),
+        )
     }
 
     ConfirmSheet(

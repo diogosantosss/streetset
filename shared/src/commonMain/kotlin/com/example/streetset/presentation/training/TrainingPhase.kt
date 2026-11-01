@@ -33,28 +33,77 @@ sealed interface TrainingPhase {
     data object Finished : TrainingPhase
 }
 
-/**
- * Full state exposed to the UI.
- *
- * Some fields (`restSecondsLeft`, `restEndsAtMillis`) only make sense during
- * [TrainingPhase.Rest], but they live at the state root so the UI doesn't have
- * to cast on every read.
- */
 data class TrainingSessionUiState(
     val sessionTimer: String = "00:00",
+    val startedAtMillis: Long = 0L,
+    val finishedAtMillis: Long = 0L,
+    val elapsedSeconds: Long = 0L,
+    val notes: String = "",
     val phase: TrainingPhase = TrainingPhase.Loading,
     val queue: List<WorkoutStep> = emptyList(),
     val currentIndex: Int = 0,
     val sessionPaused: Boolean = false,
+    val awaitingFinish: Boolean = false,
     val restSecondsLeft: Long = 0L,
     val restEndsAtMillis: Long = 0L,
     val protocol: ActiveProtocolState = ActiveProtocolState.Idle,
 ) {
-    /** Step the user should be performing right now. */
     val currentStep: WorkoutStep?
         get() = queue.getOrNull(currentIndex)
 
-    /** Remaining steps to be performed. */
     val upcomingSteps: List<WorkoutStep>
         get() = queue.drop(currentIndex + 1)
+
+    /** Number of steps performed. One step per set, or per round for groups. */
+    val setsCompleted: Int
+        get() = queue.size
+
+    /** Total reps across all performed steps. Non-numeric reps count as the first number found. */
+    val totalReps: Int
+        get() = queue.sumOf { step ->
+            if (step.protocol.isGroup) {
+                step.blockWithSets.children.sumOf { child ->
+                    child.sets.sumOf { it.repsText.firstIntOrNull() }
+                }
+            } else {
+                step.set.repsText.firstIntOrNull()
+            }
+        }
+
+    /**
+     * Total tonnage lifted, in kilograms.
+     *
+     * Reps that are not a plain number contribute the first integer they contain
+     * (e.g. "10-12" → 10) so that ranges still count towards the tonnage.
+     */
+    val volumeKg: Double
+        get() = queue.sumOf { step ->
+            if (step.protocol.isGroup) {
+                step.blockWithSets.children.sumOf { child ->
+                    child.sets.sumOf { setVolume(it.repsText, it.loadText) }
+                }
+            } else {
+                setVolume(step.set.repsText, step.set.loadText)
+            }
+        }
+}
+
+private val numberRegex = Regex("""\d+""")
+
+private fun String?.firstIntOrNull(): Int =
+    this?.let { numberRegex.find(it)?.value?.toIntOrNull() } ?: 0
+
+private fun setVolume(reps: String?, load: String?): Double {
+    val repsN = reps.firstIntOrNull()
+    if (repsN == 0) return 0.0
+
+    val loadN = load
+        ?.trim()
+        ?.removeSuffix("kg")
+        ?.replace(",", ".")
+        ?.trim()
+        ?.toDoubleOrNull()
+        ?: return 0.0
+
+    return repsN * loadN
 }

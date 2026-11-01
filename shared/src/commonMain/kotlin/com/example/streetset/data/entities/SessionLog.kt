@@ -24,4 +24,5 @@ data class SessionLog(
     val completedAt: LocalDateTime,
     val durationSeconds: Int,
     val notes: String? = null,
+    val startedAt: LocalDateTime? = null,
 )

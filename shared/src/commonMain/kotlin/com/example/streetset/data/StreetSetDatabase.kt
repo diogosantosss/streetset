@@ -24,7 +24,7 @@ import com.example.streetset.data.entities.SessionLog
         PlannedSet::class,
         SessionLog::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = false,
 )
 @ColumnTypeConverters(Converters::class)

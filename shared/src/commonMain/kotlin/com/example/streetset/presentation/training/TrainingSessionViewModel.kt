@@ -6,7 +6,9 @@ import com.example.streetset.audio.AppAudio
 import com.example.streetset.data.dao.BlockDao
 import com.example.streetset.data.dao.ExerciseDao
 import com.example.streetset.data.dao.PlannedSetDao
+import com.example.streetset.data.dao.SessionLogDao
 import com.example.streetset.data.entities.PlannedSet
+import com.example.streetset.data.entities.SessionLog
 import com.example.streetset.presentation.sessiondetail.model.BlockWithSets
 import com.example.streetset.presentation.sessiondetail.model.buildBlocksWithSets
 import com.example.streetset.presentation.training.components.EmomUiState
@@ -18,6 +20,7 @@ import com.example.streetset.presentation.training.timer.HoldTimer
 import com.example.streetset.util.Time
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,9 +28,13 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Instant
 
 class TrainingSessionViewModel(
     private val sessionId: Int,
@@ -36,6 +43,7 @@ class TrainingSessionViewModel(
     private val blockDao: BlockDao by inject()
     private val plannedSetDao: PlannedSetDao by inject()
     private val exerciseDao: ExerciseDao by inject()
+    private val sessionLogDao: SessionLogDao by inject()
 
     private val stopwatch = Stopwatch()
     private val restTimer = RestTimer()
@@ -44,8 +52,18 @@ class TrainingSessionViewModel(
 
     private var timerJob: Job? = null
     private var restJob: Job? = null
+    private var insertLogJob: Job? = null
+    private var notesUpdateJob: Job? = null
 
-    private val _uiState = MutableStateFlow(TrainingSessionUiState())
+    /** Wall-clock instant when the last exercise was completed. */
+    private var finishedAtMillis: Long = 0L
+
+    /** Id of the persisted [SessionLog] for this workout, once inserted. */
+    private var sessionLogId: Int? = null
+
+    private val _uiState = MutableStateFlow(
+        TrainingSessionUiState(startedAtMillis = Time.nowMillis())
+    )
 
     /**
      * Public UI state.
@@ -111,7 +129,12 @@ class TrainingSessionViewModel(
         timerJob = viewModelScope.launch {
             try {
                 stopwatch.start().collect { (minutes, seconds) ->
-                    updateState { it.copy(sessionTimer = formatTime(minutes, seconds)) }
+                    updateState {
+                        it.copy(
+                            sessionTimer = formatTime(minutes, seconds),
+                            elapsedSeconds = minutes * 60 + seconds,
+                        )
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -241,13 +264,139 @@ class TrainingSessionViewModel(
         val rest = step.restAfterSeconds()
 
         when {
-            nextIndex >= state.queue.size -> updateState {
-                it.copy(phase = TrainingPhase.Finished, currentIndex = nextIndex)
-            }
+            nextIndex >= state.queue.size -> awaitFinish()
             rest > 0 -> startRest(step, nextIndex, rest)
             else -> goToWorking(nextIndex)
         }
     }
+
+    /**
+     * The last step was completed: freeze the clock and wait for the user to
+     * confirm the end of the workout, instead of jumping straight to
+     * [TrainingPhase.Finished].
+     */
+    private fun awaitFinish() {
+        updateState { it.copy(awaitingFinish = true) }
+    }
+
+    /** Stops the session clock and returns the final elapsed time in millis. */
+    private fun stopSessionTimer(): Long {
+        stopwatch.stop()
+        timerJob?.cancel()
+        timerJob = null
+        return stopwatch.elapsedMillis()
+    }
+
+    /** Confirms the end of the workout and moves to [TrainingPhase.Finished]. */
+    private fun finishSession() {
+        finishedAtMillis = Time.nowMillis()
+        val elapsedSeconds = stopSessionTimer() / 1000
+
+        restJob?.cancel()
+        restJob = null
+        emomTimer.reset()
+        holdTimer.reset()
+
+        updateState {
+            it.copy(
+                phase = TrainingPhase.Finished,
+                awaitingFinish = false,
+                sessionPaused = false,
+                finishedAtMillis = finishedAtMillis,
+                elapsedSeconds = elapsedSeconds,
+                sessionTimer = formatTime(elapsedSeconds / 60, elapsedSeconds % 60),
+            )
+        }
+
+        insertSessionLog()
+    }
+    // region Session log persistence
+
+    /** Inserts the [SessionLog] for this workout once the user confirms it. */
+    private fun insertSessionLog() {
+        if (sessionLogId != null || insertLogJob?.isActive == true) return
+
+        val state = _uiState.value
+        insertLogJob = viewModelScope.launch {
+            try {
+                sessionLogId = sessionLogDao.insert(
+                    SessionLog(
+                        sessionId = sessionId,
+                        completedAt = finishedAt(),
+                        durationSeconds = state.elapsedSeconds.toInt(),
+                        notes = state.notes.ifBlank { null },
+                        startedAt = startedAt(),
+                    )
+                ).toInt()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Napier.e("Failed to insert session log", e, TAG)
+            }
+        }
+    }
+
+    /** Persists the latest notes, waiting for the initial insert if needed. */
+    private suspend fun persistNotes() {
+        insertLogJob?.join()
+
+        val logId = sessionLogId ?: return
+        val state = _uiState.value
+
+        try {
+            sessionLogDao.update(
+                SessionLog(
+                    id = logId,
+                    sessionId = sessionId,
+                    completedAt = finishedAt(),
+                    durationSeconds = state.elapsedSeconds.toInt(),
+                    notes = state.notes.ifBlank { null },
+                    startedAt = startedAt(),
+                )
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Napier.e("Failed to update session log notes", e, TAG)
+        }
+    }
+
+    private fun scheduleNotesUpdate() {
+        notesUpdateJob?.cancel()
+        notesUpdateJob = viewModelScope.launch {
+            delay(NOTES_UPDATE_DELAY_MILLIS.milliseconds)
+            persistNotes()
+        }
+    }
+
+    /**
+     * Flushes the notes and only leaves the screen after the write has been
+     * attempted, so the last keystrokes are not lost on navigation.
+     */
+    fun saveAndExit(onExit: () -> Unit) {
+        notesUpdateJob?.cancel()
+        notesUpdateJob = null
+
+        viewModelScope.launch {
+            try {
+                persistNotes()
+            } finally {
+                onExit()
+            }
+        }
+    }
+
+    private fun finishedAt() = Instant.fromEpochMilliseconds(finishedAtMillis)
+        .toLocalDateTime(TimeZone.currentSystemDefault())
+
+    private fun startedAt() = _uiState.value.startedAtMillis
+        .takeIf { it > 0L }
+        ?.let {
+            Instant.fromEpochMilliseconds(it)
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+        }
+
+    // endregion
 
     private fun startRest(step: WorkoutStep, nextIndex: Int, restSeconds: Int) {
         val endsAt = Time.nowMillis() + restSeconds * 1000L
@@ -277,9 +426,14 @@ class TrainingSessionViewModel(
 
     // region User actions
 
-    /** Primary action (complete set/round or skip rest). */
+    /** Primary action (complete set/round, skip rest or finish the workout). */
     fun onPrimaryAction() {
         val state = _uiState.value
+        if (state.awaitingFinish) {
+            finishSession()
+            return
+        }
+
         when (val phase = state.phase) {
             is TrainingPhase.Rest -> skipRest()
 
@@ -301,6 +455,12 @@ class TrainingSessionViewModel(
         goToWorking(_uiState.value.currentIndex + 1)
     }
 
+    /** Updates the notes the user is writing for the finished session. */
+    fun onNotesChange(notes: String) {
+        updateState { it.copy(notes = notes) }
+        scheduleNotesUpdate()
+    }
+
     /**
      * Pauses/resumes the session.
      *
@@ -309,6 +469,8 @@ class TrainingSessionViewModel(
      * logic.
      */
     fun togglePause() {
+        if (_uiState.value.phase is TrainingPhase.Finished) return
+
         val paused = !_uiState.value.sessionPaused
         updateState { it.copy(sessionPaused = paused) }
 
@@ -370,5 +532,6 @@ class TrainingSessionViewModel(
 
     companion object {
         private const val TAG = "TrainingSessionViewModel"
+        private const val NOTES_UPDATE_DELAY_MILLIS = 400L
     }
 }

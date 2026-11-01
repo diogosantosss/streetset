@@ -30,6 +30,10 @@ class Stopwatch {
         elapsedTime = Time.nowMillis() - startTime
     }
 
+    /** Elapsed time in milliseconds, whether the stopwatch is running or not. */
+    fun elapsedMillis(): Long =
+        if (running) Time.nowMillis() - startTime else elapsedTime
+
     fun reset() {
         running = false
         elapsedTime = 0L

@@ -6,6 +6,8 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -23,6 +25,7 @@ import com.example.streetset.navigation.TrainingSessionRoute
 
 private const val TabTransitionDurationMillis = 280
 private const val DetailTransitionDurationMillis = 220
+private const val FinishTransitionDurationMillis = 320
 
 object StreetSetNav {
 
@@ -128,6 +131,27 @@ object StreetSetNav {
                 ) + fadeOut(animationSpec = tween(TabTransitionDurationMillis))
             }
         }
+    }
+
+    // Workout finish transitions
+    /**
+     * Leaving the workout after tapping "Back to calendar": fade + slight scale
+     * so the transition does not feel like a teleport.
+     */
+    val finishPopExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+        fadeOut(animationSpec = tween(FinishTransitionDurationMillis)) +
+            scaleOut(
+                targetScale = 0.92f,
+                animationSpec = tween(FinishTransitionDurationMillis),
+            )
+    }
+
+    val finishPopEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
+        fadeIn(animationSpec = tween(FinishTransitionDurationMillis)) +
+            scaleIn(
+                initialScale = 0.96f,
+                animationSpec = tween(FinishTransitionDurationMillis),
+            )
     }
 
     // Helpers

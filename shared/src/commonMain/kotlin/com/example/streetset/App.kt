@@ -40,6 +40,8 @@ import com.example.streetset.util.StreetSetNav.bottomBarEnter
 import com.example.streetset.util.StreetSetNav.bottomBarExit
 import com.example.streetset.util.StreetSetNav.enter
 import com.example.streetset.util.StreetSetNav.exit
+import com.example.streetset.util.StreetSetNav.finishPopEnter
+import com.example.streetset.util.StreetSetNav.finishPopExit
 import com.example.streetset.util.StreetSetNav.isDetail
 import com.example.streetset.util.StreetSetNav.navigateToTab
 import com.example.streetset.util.StreetSetNav.popEnter
@@ -85,7 +87,15 @@ private fun StreetSetApp(
              *
              * These tabs are managed by NavHostController and [CalendarRoute] contains followup routes: [SessionDetailRoute] & [TrainingSessionRoute].
              */
-            composable<CalendarRoute> {
+            composable<CalendarRoute>(
+                popEnterTransition = {
+                    if (initialState.destination.hasRoute<TrainingSessionRoute>()) {
+                        finishPopEnter.invoke(this)
+                    } else {
+                        popEnter.invoke(this)
+                    }
+                },
+            ) {
                 CalendarScreen(
                     hazeState = hazeState,
                     onSessionClick = { sessionId, title ->
@@ -108,13 +118,24 @@ private fun StreetSetApp(
                 )
             }
 
-            composable<TrainingSessionRoute> { entry: NavBackStackEntry ->
+            composable<TrainingSessionRoute>(
+                popExitTransition = {
+                    if (targetState.destination.hasRoute<CalendarRoute>()) {
+                        finishPopExit.invoke(this)
+                    } else {
+                        popExit.invoke(this)
+                    }
+                },
+            ) { entry: NavBackStackEntry ->
                 val route = entry.toRoute<TrainingSessionRoute>()
                 TrainingSessionScreen(
                     sessionId = route.sessionId,
                     title = route.title,
                     hazeState = hazeState,
                     onBack = { navController.popBackStack() },
+                    onFinish = {
+                        navController.popBackStack<CalendarRoute>(inclusive = false)
+                    },
                 )
             }
         }

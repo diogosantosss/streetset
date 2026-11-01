@@ -44,25 +44,28 @@ fun TrainingBottomBar(
     isSessionPaused: Boolean,
     actionText: String,
     isVisible: Boolean = true,
+    showPause: Boolean = true,
     onPauseClick: () -> Unit,
     onActionClick: () -> Unit,
 ) {
     val colors = LocalAppColors.current
 
     BottomBar(modifier, hazeState, isVisible) {
-        IconButton(
-            onClick = onPauseClick,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(colors.surfaceHigh),
-        ) {
-            Icon(
-                imageVector = if (isSessionPaused) Lucide.Play else Lucide.Pause,
-                contentDescription = if (isSessionPaused) "Resume" else "Pause",
-                tint = colors.textPrimary,
-                modifier = Modifier.size(20.dp),
-            )
+        if (showPause) {
+            IconButton(
+                onClick = onPauseClick,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(colors.surfaceHigh),
+            ) {
+                Icon(
+                    imageVector = if (isSessionPaused) Lucide.Play else Lucide.Pause,
+                    contentDescription = if (isSessionPaused) "Resume" else "Pause",
+                    tint = colors.textPrimary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
 
         Row(
