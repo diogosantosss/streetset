@@ -2,7 +2,7 @@
 
 **A personal workout tracking app built with Kotlin Multiplatform.**
 
-Plan your training, track your sessions, and monitor your progress — with a shared codebase for Android and iOS.
+Plan your training on a calendar, follow your sessions step by step, and monitor your progress — with a shared codebase for Android and iOS.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Kotlin-Multiplatform-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin Multiplatform" />
@@ -16,32 +16,37 @@ Plan your training, track your sessions, and monitor your progress — with a sh
 
 StreetSet is a workout planning and tracking app designed around structured strength training.
 
-Training is organized into a simple hierarchy:
+Training lives on a calendar, with as many sessions per day as you want:
 
-**Programs → Weeks → Sessions → Blocks → Exercises**
+**Calendar → Sessions → Blocks → Exercises**
 
-Each block defines an exercise, its training protocol, and planned sets, including reps, load, rest time, RPE, and tempo.
+Each block defines an exercise (or a group of exercises), its training protocol, and its planned sets, including reps, load, rest time, RPE, and tempo or hold duration.
 
 Completed sessions are stored as session logs and used to track training history and display statistics.
 
 ## Features
 
-- **Training plans** — Organize programs into weeks and sessions.
-- **Flexible workouts** — Structure sessions using exercise blocks and training protocols.
-- **Set tracking** — Record reps, load, rest, RPE, and tempo.
-- **Session history** — Save completed workouts for future reference.
-- **Training statistics** — Use recorded sessions to monitor progress.
+- **Calendar** — Browse months, see which days have sessions (done, missed or planned), and create several sessions per day.
+- **Flexible workouts** — Build sessions from blocks using different training protocols: normal, warm-up, top set, back-off, EMOM, hold, metronome, circuit and superset.
+- **Guided training mode** — Follow a session set by set, with rest timers, EMOM and hold timers, and the full list of what comes next. Circuits and supersets are done round by round.
+- **Set planning** — Plan reps, load, rest, RPE, rounds, BPM and hold time for each block.
+- **Spreadsheet import** — Paste rows copied from a spreadsheet to create sessions in bulk. A dash splits the sets of a block (`5-3-1` reps with `BW-10-15` load), and a session with the same name on the same day is replaced.
+- **Session history** — Save completed workouts, with duration and notes.
+- **Training statistics** — A 12-month activity heatmap, weekly streak, sessions per week, training mix and most trained exercises.
+- **Workout in the background** — The running workout shows as an ongoing notification on Android. iOS Live Activity and Dynamic Island support is in progress.
 - **Local persistence** — Keep workout data stored locally.
 
 ## Tech Stack
 
-| Technology            | Purpose                          |
-|-----------------------|----------------------------------|
-| Kotlin Multiplatform  | Shared application logic         |
-| Compose Multiplatform | Shared UI across Android and iOS |
-| Room                  | Local database and persistence   |
-| Koin                  | Dependency injection             |
-| kotlinx-datetime      | Date and time handling           |
+| Technology            | Purpose                                  |
+|-----------------------|------------------------------------------|
+| Kotlin Multiplatform  | Shared application logic                 |
+| Compose Multiplatform | Shared UI across Android and iOS         |
+| Room                  | Local database and persistence           |
+| Koin                  | Dependency injection                     |
+| kotlinx-datetime      | Date and time handling                   |
+| Haze                  | Blur effects                             |
+| Napier                | Logging                                  |
 
 ## Project Structure
 
