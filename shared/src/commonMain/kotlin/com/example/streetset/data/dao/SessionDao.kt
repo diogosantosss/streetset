@@ -46,6 +46,9 @@ interface SessionDao {
     )
     fun getDaySummaries(start: LocalDate, end: LocalDate): Flow<List<DaySummary>>
 
+    @Query("SELECT id FROM sessions WHERE date = :date AND name = :name COLLATE NOCASE LIMIT 1")
+    suspend fun findIdByDateAndName(date: LocalDate, name: String): Int?
+
     @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM sessions WHERE date = :date")
     suspend fun nextPosition(date: LocalDate): Int
 

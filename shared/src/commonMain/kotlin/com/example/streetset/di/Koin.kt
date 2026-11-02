@@ -4,6 +4,7 @@ import com.example.streetset.data.DatabaseSeeder
 import com.example.streetset.presentation.calendar.CalendarViewModel
 import com.example.streetset.presentation.calendar.CreateSessionCalendarViewModel
 import com.example.streetset.presentation.calendar.DeleteSessionViewModel
+import com.example.streetset.presentation.calendar.ImportSessionsViewModel
 import com.example.streetset.presentation.sessiondetail.AddBlockViewModel
 import com.example.streetset.presentation.sessiondetail.BlockOptionsViewModel
 import com.example.streetset.presentation.sessiondetail.SessionBlocksViewModel
@@ -30,6 +31,7 @@ val appModule = module {
     viewModelOf(::CalendarViewModel)
     viewModelOf(::CreateSessionCalendarViewModel)
     viewModelOf(::DeleteSessionViewModel)
+    viewModelOf(::ImportSessionsViewModel)
 
     // Stats
     viewModelOf(::StatsViewModel)

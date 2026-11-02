@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.ChevronLeft
 import com.composables.icons.lucide.ChevronRight
+import com.composables.icons.lucide.ClipboardPaste
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Trash2
@@ -96,6 +97,7 @@ fun CalendarScreen(
     calendarViewModel: CalendarViewModel = koinViewModel<CalendarViewModel>(),
     createViewModel: CreateSessionCalendarViewModel = koinViewModel<CreateSessionCalendarViewModel>(),
     deleteViewModel: DeleteSessionViewModel = koinViewModel<DeleteSessionViewModel>(),
+    importViewModel: ImportSessionsViewModel = koinViewModel<ImportSessionsViewModel>()
 ) {
     val colors = LocalAppColors.current
     val state by calendarViewModel.state.collectAsState()
@@ -167,6 +169,7 @@ fun CalendarScreen(
                                 calendarViewModel.selectDate(today)
                                 scope.launch { pagerState.animateScrollToPage(InitialPage) }
                             },
+                            onImport = importViewModel::open,
                         )
                     }
                 }
@@ -186,6 +189,7 @@ fun CalendarScreen(
     // These read their own state, so opening them doesn't recompose the whole screen
     CreateSessionHost(createViewModel)
     DeleteSessionHost(deleteViewModel)
+    ImportSessionsHost(importViewModel)
 }
 
 private fun monthForPage(anchor: LocalDate, page: Int): LocalDate =
@@ -376,6 +380,7 @@ private fun DaySection(
     onAdd: () -> Unit,
     onDelete: (DaySession) -> Unit,
     onToday: () -> Unit,
+    onImport: () -> Unit
 ) {
     val colors = LocalAppColors.current
     val done = sessions.count { it.completed }
@@ -439,7 +444,27 @@ private fun DaySection(
                 }
             }
             AddSessionRow(onClick = onAdd)
+            InsetDivider()
+            ImportSessionsRow(onClick = onImport)
         }
+    }
+}
+
+@Composable
+private fun ImportSessionsRow(onClick: () -> Unit) {
+    val colors = LocalAppColors.current
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 16.dp),
+    ) {
+        Icon(Lucide.ClipboardPaste, null, tint = colors.textSecondary, modifier = Modifier.size(14.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text("Import from spreadsheet", fontSize = 15.sp, color = colors.textSecondary)
     }
 }
 

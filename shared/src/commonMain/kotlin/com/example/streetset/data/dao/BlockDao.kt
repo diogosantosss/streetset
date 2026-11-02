@@ -22,6 +22,12 @@ interface BlockDao {
     @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM blocks WHERE sessionId = :sessionId AND parentId IS NULL")
     suspend fun nextPosition(sessionId: Int): Int
 
+    @Query("SELECT id FROM blocks WHERE sessionId = :sessionId AND parentId IS NULL")
+    suspend fun getTopLevelIds(sessionId: Int): List<Int>
+
+    @Query("DELETE FROM blocks WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Int>)
+
     @Insert
     suspend fun insert(block: Block): Long
 
