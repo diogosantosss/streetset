@@ -10,8 +10,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Gauge
@@ -77,15 +81,16 @@ fun StatCard(
     unit: String?,
     label: String,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
     val colors = LocalAppColors.current
     Column(modifier = modifier) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 text = value,
-                fontSize = 52.sp,
+                fontSize = if (compact) 36.sp else 52.sp,
                 fontWeight = FontWeight.SemiBold,
-                letterSpacing = (-1).sp,
+                letterSpacing = if (compact) TextUnit.Unspecified else (-1).sp,
                 color = colors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -94,9 +99,12 @@ fun StatCard(
             unit?.let {
                 Text(
                     text = it,
-                    fontSize = 18.sp,
+                    fontSize = if (compact) 16.sp else 18.sp,
                     color = colors.textSecondary,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 9.dp),
+                    modifier = Modifier.padding(
+                        start = 4.dp,
+                        bottom = if (compact) 6.dp else 9.dp,
+                    ),
                 )
             }
         }
@@ -106,6 +114,36 @@ fun StatCard(
             fontWeight = FontWeight.Medium,
             letterSpacing = 0.8.sp,
             color = colors.textTertiary,
+        )
+    }
+}
+
+@Composable
+internal fun MetaIconText(
+    icon: ImageVector,
+    text: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 17.sp,
+    iconSize: Dp = 14.dp,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        modifier = modifier,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = LocalAppColors.current.textTertiary,
+            modifier = Modifier.size(iconSize),
+        )
+        Text(
+            text = text,
+            fontSize = fontSize,
+            fontWeight = FontWeight.Medium,
+            color = color,
+            maxLines = 1,
         )
     }
 }

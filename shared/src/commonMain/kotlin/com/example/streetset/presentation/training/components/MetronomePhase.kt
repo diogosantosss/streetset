@@ -1,13 +1,7 @@
 package com.example.streetset.presentation.training.components
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,16 +9,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,12 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -83,44 +70,13 @@ fun MetronomePhase(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .clip(CircleShape)
-                    .background(accent),
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = step.protocolDisplay.uppercase(),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.8.sp,
-                color = accent,
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = "Set ${step.setIndex} of ${step.totalSetsInBlock}",
-                fontSize = 13.sp,
-                color = colors.textSecondary,
-            )
-        }
-
-        Text(
-            text = step.exerciseName,
-            fontSize = 30.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = colors.textPrimary,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 12.dp),
-        )
-
-        SetSegments(
+        PhaseWorkingHeader(
+            protocolLabel = step.protocolDisplay.uppercase(),
+            accent = accent,
+            trailing = "Set ${step.setIndex} of ${step.totalSetsInBlock}",
+            title = step.exerciseName,
             current = step.setIndex,
             total = step.totalSetsInBlock,
-            color = accent,
-            modifier = Modifier.padding(top = 16.dp),
         )
 
         // Ring
@@ -162,11 +118,8 @@ fun MetronomePhase(
                 }
             }
 
-            AnimatedContent(
+            ProtocolCenterAnimated(
                 targetState = isRunning,
-                transitionSpec = {
-                    (scaleIn(tween(220)) + fadeIn(tween(220))).togetherWith(scaleOut(tween(180)) + fadeOut(tween(180)))
-                },
                 label = "metronome_center",
             ) { running ->
                 if (!running) {
@@ -195,13 +148,7 @@ fun MetronomePhase(
                             scaleY = scale
                         },
                     ) {
-                        Text(
-                            text = "BEAT",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 1.4.sp,
-                            color = colors.textTertiary,
-                        )
+                        ProtocolKicker("BEAT")
                         Text(
                             text = "${metronome.beatCount}",
                             fontSize = 64.sp,
@@ -214,18 +161,16 @@ fun MetronomePhase(
         }
 
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = 16.dp),
         ) {
-            Icon(Lucide.Activity, null, tint = colors.textTertiary, modifier = Modifier.size(14.dp))
-            Text(
+            MetaIconText(
+                icon = Lucide.Activity,
                 text = "${metronome.bpm} BPM",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
                 color = colors.textSecondary,
+                fontSize = 15.sp,
+                iconSize = 14.dp,
             )
         }
 
@@ -235,95 +180,30 @@ fun MetronomePhase(
                 .fillMaxWidth()
                 .padding(top = 28.dp),
         ) {
-            MetronomeStat(value = step.repsDisplay, unit = null, label = "REPS", modifier = Modifier.weight(1f))
-            MetronomeStat(value = step.loadValue, unit = step.loadUnit, label = "LOAD", modifier = Modifier.weight(1f))
+            StatCard(
+                value = step.repsDisplay,
+                unit = null,
+                label = "REPS",
+                compact = true,
+                modifier = Modifier.weight(1f),
+            )
+            StatCard(
+                value = step.loadValue,
+                unit = step.loadUnit,
+                label = "LOAD",
+                compact = true,
+                modifier = Modifier.weight(1f),
+            )
         }
 
         if (step.restSeconds > 0) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            MetaIconText(
+                icon = Lucide.Timer,
+                text = "${formatRestSecondsShort(step.restSeconds)} rest after this set",
+                color = colors.textTertiary,
+                fontSize = 13.sp,
+                iconSize = 13.dp,
                 modifier = Modifier.padding(top = 20.dp),
-            ) {
-                Icon(Lucide.Timer, null, tint = colors.textTertiary, modifier = Modifier.size(13.dp))
-                Text(
-                    text = "${formatRestSecondsShort(step.restSeconds)} rest after this set",
-                    fontSize = 13.sp,
-                    color = colors.textTertiary,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MetronomeStat(
-    value: String,
-    unit: String?,
-    label: String,
-    modifier: Modifier = Modifier,
-) {
-    val colors = LocalAppColors.current
-
-    Column(modifier = modifier) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                text = value,
-                fontSize = 36.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = colors.textPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-            unit?.let {
-                Text(
-                    text = it,
-                    fontSize = 16.sp,
-                    color = colors.textSecondary,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 6.dp),
-                )
-            }
-        }
-        Text(
-            text = label,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            letterSpacing = 0.8.sp,
-            color = colors.textTertiary,
-        )
-    }
-}
-
-/** One thin segment per set of the block: done, current and remaining. */
-@Composable
-private fun SetSegments(
-    current: Int,
-    total: Int,
-    color: Color,
-    modifier: Modifier = Modifier,
-) {
-    if (total <= 1) return
-    val track = LocalAppColors.current.textTertiary.copy(alpha = 0.25f)
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        repeat(total) { index ->
-            val number = index + 1
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(3.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(
-                        when {
-                            number < current -> color.copy(alpha = 0.45f)
-                            number == current -> color
-                            else -> track
-                        },
-                    ),
             )
         }
     }

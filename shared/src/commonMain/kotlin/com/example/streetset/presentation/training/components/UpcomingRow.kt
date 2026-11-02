@@ -153,8 +153,7 @@ private fun RowScope.StandardUpcomingMeta(step: WorkoutStep, style: UpcomingStyl
 
 @Composable
 private fun RowScope.EmomUpcomingMeta(step: WorkoutStep, style: UpcomingStyle) {
-    val block = step.blockWithSets.block
-    val rest = block.restBetweenRoundsSeconds.takeIf { it > 0 } ?: step.restSeconds
+    val rest = step.restSeconds
 
     UpcomingLeft(step = step, style = style) {
         MetaRow(
