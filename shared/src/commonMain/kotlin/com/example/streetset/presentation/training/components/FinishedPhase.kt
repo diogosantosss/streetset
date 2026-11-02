@@ -33,7 +33,7 @@ import com.composables.icons.lucide.Repeat
 import com.example.streetset.presentation.training.model.formatDuration
 import com.example.streetset.presentation.training.model.formatStartedAt
 import com.example.streetset.ui.components.AppTextField
-import com.example.streetset.ui.components.BOTTOM_BAR_HEIGTH
+import com.example.streetset.ui.components.BOTTOM_BAR_HEIGHT
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
 import kotlin.math.roundToInt
@@ -59,7 +59,7 @@ fun FinishedPhase(
             .navigationBarsPadding()
             .imePadding()
             .verticalScroll(rememberScrollState())
-            .padding(top = 24.dp, bottom = BOTTOM_BAR_HEIGTH + 24.dp),
+            .padding(top = 24.dp, bottom = BOTTOM_BAR_HEIGHT + 24.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(

@@ -1,4 +1,4 @@
-package com.example.streetset.presentation.training
+package com.example.streetset.presentation.training.timer
 
 import com.example.streetset.audio.CountdownAudio
 import com.example.streetset.util.Time

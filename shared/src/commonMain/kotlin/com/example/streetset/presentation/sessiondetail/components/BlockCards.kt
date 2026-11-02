@@ -296,7 +296,7 @@ fun EmomBlockSection(
         block = item.block,
         title = item.exerciseName,
         isBusy = isBusy,
-        footer = metaItems(item.block, includeRest = false),
+        footer = metaItems(item.block, includeRest = true),
         modifier = modifier,
         onClick = onClick,
         onLongClick = onLongClick,
@@ -839,7 +839,7 @@ private fun EmomBlockSectionPreview() {
     PreviewSurface {
         EmomBlockSection(
             BlockWithSets(
-                block = previewBlock(TrainingProtocol.EMOM, rpe = 7),
+                block = previewBlock(TrainingProtocol.EMOM, restSeconds = 30, rpe = 7),
                 exerciseName = "Kettlebell Swing",
                 sets = listOf(previewSet(1, 1, "12", "24kg", minutes = 10)),
             ),

@@ -51,12 +51,18 @@ data class WorkoutStep(
     val isHold: Boolean
         get() = protocol == TrainingProtocol.HOLD
 
+    val isMetronome: Boolean
+        get() = protocol == TrainingProtocol.METRONOME
+
     val emomRounds: Int
         get() {
             val blockRounds = blockWithSets.block.rounds
             if (blockRounds != null && blockRounds > 0) return blockRounds
             return if (totalSetsInBlock > 0) totalSetsInBlock else 1
         }
+
+    val metronomeBpm: Int
+        get() = blockWithSets.block.bpm?.takeIf { it > 0 } ?: 60
 
     private fun splitLoad(raw: String?): Pair<String, String?> {
         val load = raw?.trim().orEmpty()

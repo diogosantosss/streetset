@@ -4,6 +4,7 @@ import com.example.streetset.presentation.sessiondetail.model.TrainingProtocol
 import com.example.streetset.presentation.training.components.EmomUiState
 
 private const val DefaultEmomIntervalSeconds = 60
+private const val DefaultPrepareSeconds = 5
 
 sealed interface ActiveProtocolState {
     /**
@@ -52,9 +53,12 @@ sealed interface ActiveProtocolState {
     }
 
     data class Metronome(
+        val uiState: MetronomeUiState = MetronomeUiState.IDLE,
         val bpm: Int = 60,
-        val isRunning: Boolean = false,
+        val beatCount: Int = 0,
     ) : ActiveProtocolState {
+        val isRunning: Boolean get() = uiState == MetronomeUiState.RUNNING
+
         val beatIntervalMillis: Long get() = if (bpm > 0) 60_000L / bpm else 0L
     }
 
@@ -85,4 +89,9 @@ enum class HoldUiState {
     RUNNING,
     PREPARE_COUNTDOWN,
     COMPLETED,
+}
+
+enum class MetronomeUiState {
+    IDLE,
+    RUNNING,
 }

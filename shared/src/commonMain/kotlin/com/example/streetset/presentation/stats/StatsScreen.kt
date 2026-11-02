@@ -26,7 +26,7 @@ import com.example.streetset.presentation.stats.components.StatsSkeleton
 import com.example.streetset.presentation.stats.components.SummaryRow
 import com.example.streetset.presentation.stats.components.TopExercisesSection
 import com.example.streetset.presentation.stats.components.WeeksSection
-import com.example.streetset.ui.components.BOTTOM_BAR_HEIGTH
+import com.example.streetset.ui.components.BOTTOM_BAR_HEIGHT
 import com.example.streetset.ui.components.TopBar
 import com.example.streetset.ui.components.TopBarDefaults
 import com.example.streetset.ui.theme.LocalAppColors
@@ -59,7 +59,7 @@ fun StatsScreen(
                 start = 16.dp,
                 end = 16.dp,
                 top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + TopBarDefaults.Height + 16.dp,
-                bottom = BOTTOM_BAR_HEIGTH,
+                bottom = BOTTOM_BAR_HEIGHT,
             ),
             verticalArrangement = Arrangement.spacedBy(32.dp),
             modifier = Modifier

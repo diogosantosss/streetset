@@ -43,12 +43,13 @@ import com.example.streetset.presentation.training.components.CurrentSetPhase
 import com.example.streetset.presentation.training.components.EmomPhase
 import com.example.streetset.presentation.training.components.FinishedPhase
 import com.example.streetset.presentation.training.components.HoldPhase
+import com.example.streetset.presentation.training.components.MetronomePhase
 import com.example.streetset.presentation.training.components.RestPhase
 import com.example.streetset.presentation.training.components.TrainingBottomBar
 import com.example.streetset.presentation.training.components.UpcomingRow
 import com.example.streetset.presentation.training.components.UpcomingRowState
 import com.example.streetset.presentation.training.model.ActiveProtocolState
-import com.example.streetset.ui.components.BOTTOM_BAR_HEIGTH
+import com.example.streetset.ui.components.BOTTOM_BAR_HEIGHT
 import com.example.streetset.ui.components.ConfirmSheet
 import com.example.streetset.ui.components.TopBar
 import com.example.streetset.ui.components.TopBarDefaults
@@ -152,8 +153,13 @@ fun TrainingSessionScreen(
 
                                 is ActiveProtocolState.Group -> CurrentGroupPhase(step = current, group = protocol)
 
-                                ActiveProtocolState.Idle, is ActiveProtocolState.Hold,
-                                is ActiveProtocolState.Metronome -> CurrentSetPhase(step = current)
+                                is ActiveProtocolState.Metronome -> MetronomePhase(
+                                    step = current,
+                                    metronome = protocol,
+                                    onStart = viewModel::startActiveProtocol,
+                                )
+
+                                ActiveProtocolState.Idle -> CurrentSetPhase(step = current)
                             }
                         }
                     }
@@ -188,7 +194,7 @@ fun TrainingSessionScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    contentPadding = PaddingValues(bottom = BOTTOM_BAR_HEIGTH + 32.dp),
+                    contentPadding = PaddingValues(bottom = BOTTOM_BAR_HEIGHT + 32.dp),
                 ) {
                     itemsIndexed(
                         items = uiState.queue,

@@ -33,7 +33,6 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -67,7 +66,7 @@ import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Trash2
 import com.example.streetset.data.dao.DaySession
 import com.example.streetset.data.dao.DaySummary
-import com.example.streetset.ui.components.BOTTOM_BAR_HEIGTH
+import com.example.streetset.ui.components.BOTTOM_BAR_HEIGHT
 import com.example.streetset.ui.components.ConfirmSheet
 import com.example.streetset.ui.components.ProcessingModal
 import com.example.streetset.ui.components.TopBar
@@ -130,7 +129,7 @@ fun CalendarScreen(
                 end = 16.dp,
                 top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + TopBarDefaults.Height + 8.dp,
                 // Leaves room for the floating tab bar
-                bottom = BOTTOM_BAR_HEIGTH,
+                bottom = BOTTOM_BAR_HEIGHT,
             ),
             verticalArrangement = Arrangement.spacedBy(24.dp),
             modifier = Modifier

@@ -3,14 +3,12 @@ package com.example.streetset.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -34,7 +32,7 @@ import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.blur.materials.HazeMaterials
 
 
-val BOTTOM_BAR_HEIGTH: Dp = 128.dp
+val BOTTOM_BAR_HEIGHT: Dp = 128.dp
 
 @Composable
 fun BottomBar(
@@ -67,7 +65,7 @@ fun BottomBar(
                 .hazeBlur(input = HazeInput.Backdrop(hazeState), style = blurStyle)
                 .background(overlayColor)
                 .border(1.dp, colors.border.copy(alpha = 0.5f), shape)
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 18.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             content = content,
