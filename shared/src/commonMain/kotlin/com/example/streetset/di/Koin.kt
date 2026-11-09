@@ -10,9 +10,12 @@ import com.example.streetset.presentation.sessiondetail.BlockOptionsViewModel
 import com.example.streetset.presentation.sessiondetail.SessionBlocksViewModel
 import com.example.streetset.presentation.settings.SettingsViewModel
 import com.example.streetset.presentation.settings.ThemeRepository
+import com.example.streetset.presentation.settings.VolumeRepository
+import com.example.streetset.presentation.settings.VolumeViewModel
 import com.example.streetset.presentation.stats.StatsViewModel
 import com.example.streetset.presentation.training.TrainingSessionViewModel
 import org.koin.core.context.startKoin
+import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -25,6 +28,7 @@ val appModule = module {
     // single instances
     singleOf(::DatabaseSeeder)
     singleOf(::ThemeRepository)
+    singleOf(::VolumeRepository) { createdAtStart() }
 
     // Tabs related VMs region
     // Calendar
@@ -38,7 +42,7 @@ val appModule = module {
 
     // Settings
     viewModelOf(::SettingsViewModel)
-
+    viewModelOf(::VolumeViewModel)
 
     // Session Details VMs
     viewModel { (sessionId: Int) -> SessionBlocksViewModel(sessionId) }

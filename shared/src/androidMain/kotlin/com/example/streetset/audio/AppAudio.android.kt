@@ -28,6 +28,15 @@ actual object AppAudio {
     private val soundIds = mutableMapOf<AppSound, Int>()
     private var initialized = false
 
+    @Volatile
+    private var level = 1f
+
+    actual var volume: Float
+        get() = level
+        set(value) {
+            level = value.coerceIn(0f, 1f)
+        }
+
     actual fun init() {
         if (initialized) return
         initialized = true
@@ -51,6 +60,8 @@ actual object AppAudio {
 
     actual fun play(sound: AppSound) {
         val id = soundIds[sound] ?: return
-        soundPool.play(id, 1f, 1f, 0, 0, 1f)
+        val level = level
+        if (level <= 0f) return
+        soundPool.play(id, level, level, 0, 0, 1f)
     }
 }

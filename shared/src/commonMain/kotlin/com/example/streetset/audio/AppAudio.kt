@@ -8,4 +8,7 @@ enum class AppSound(val fileName: String) {
 expect object AppAudio {
     fun init()
     fun play(sound: AppSound)
+
+    /** App level from 0f to 1f, applied on top of the system volume. */
+    var volume: Float
 }

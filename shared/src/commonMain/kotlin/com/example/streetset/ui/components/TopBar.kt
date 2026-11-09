@@ -155,6 +155,15 @@ fun TopBar(
                         .align(Alignment.Center)
                         .padding(horizontal = 96.dp),
                 )
+                if (actionIcon != null) {
+                    TopBarAction(
+                        imageVector = actionIcon,
+                        onClick = onActionClick,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = HorizontalPadding),
+                    )
+                }
             } else {
                 Text(
                     text = title,

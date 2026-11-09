@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.streetset.presentation.settings.VolumeViewModel
 import com.example.streetset.presentation.training.components.CurrentGroupPhase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -48,6 +49,8 @@ import com.example.streetset.presentation.training.components.RestPhase
 import com.example.streetset.presentation.training.components.TrainingBottomBar
 import com.example.streetset.presentation.training.components.UpcomingRow
 import com.example.streetset.presentation.training.components.UpcomingRowState
+import com.example.streetset.presentation.training.components.VolumeSheet
+import com.example.streetset.presentation.training.components.volumeIcon
 import com.example.streetset.presentation.training.model.ActiveProtocolState
 import com.example.streetset.ui.components.BOTTOM_BAR_HEIGHT
 import com.example.streetset.ui.components.ConfirmSheet
@@ -67,9 +70,13 @@ fun TrainingSessionScreen(
     onBack: () -> Unit,
     onFinish: () -> Unit,
     viewModel: TrainingSessionViewModel = koinViewModel { parametersOf(sessionId) },
+    volumeViewModel: VolumeViewModel = koinViewModel<VolumeViewModel>(),
 ) {
     val colors = LocalAppColors.current
     val uiState by viewModel.uiState.collectAsState()
+
+    val volumeState by volumeViewModel.volume.collectAsState()
+    var showVolume by remember { mutableStateOf(false) }
 
     var showExitConfirm by remember { mutableStateOf(false) }
 
@@ -243,6 +250,8 @@ fun TrainingSessionScreen(
                     showExitConfirm = true
                 }
             },
+            actionIcon = volumeIcon(volumeState),
+            onActionClick = { showVolume = true },
             hazeState = hazeState,
             scrolled = scrolled,
             modifier = Modifier.align(Alignment.TopCenter),
@@ -290,6 +299,14 @@ fun TrainingSessionScreen(
             onBack()
         },
         onDismiss = { showExitConfirm = false },
+    )
+
+    VolumeSheet(
+        visible = showVolume,
+        volume = volumeState,
+        onVolumeChange = volumeViewModel::setVolume,
+        onVolumeChangeFinished = volumeViewModel::commit,
+        onDismiss = { showVolume = false },
     )
 }
 
