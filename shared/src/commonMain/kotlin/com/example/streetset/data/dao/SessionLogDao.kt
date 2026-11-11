@@ -20,42 +20,28 @@ interface SessionLogDao {
     @Query("SELECT * FROM session_logs WHERE completedAt >= :since ORDER BY completedAt")
     fun getSince(since: LocalDateTime): Flow<List<SessionLog>>
 
-
-    data class ProtocolSets(val protocol: String, val sets: Int)
-
-    // Planned sets per protocol, for the sessions that were completed. The exercises of a circuit
-    // or superset count under the protocol of their parent block, once per round.
-    @Query(
-        """
-        SELECT COALESCE(parent.protocol, blocks.protocol) AS protocol,
-               SUM(COALESCE(parent.rounds, 1)) AS sets
-        FROM planned_sets
-        INNER JOIN blocks ON planned_sets.blockId = blocks.id
-        LEFT JOIN blocks AS parent ON blocks.parentId = parent.id
-        WHERE blocks.sessionId IN (SELECT DISTINCT sessionId FROM session_logs WHERE completedAt >= :since)
-        GROUP BY COALESCE(parent.protocol, blocks.protocol)
-        """
+    /** A completed workout, joined with the name of the session it belongs to. */
+    data class HistoryEntry(
+        val logId: Int,
+        val sessionName: String,
+        val completedAt: LocalDateTime,
+        val durationSeconds: Int,
+        val notes: String?,
     )
-    fun getProtocolSets(since: LocalDateTime): Flow<List<ProtocolSets>>
-
-
-    data class ExerciseSets(val name: String, val sets: Int)
 
     @Query(
         """
-        SELECT exercises.name AS name,
-               SUM(COALESCE(parent.rounds, 1)) AS sets
-        FROM planned_sets
-        INNER JOIN blocks ON planned_sets.blockId = blocks.id
-        INNER JOIN exercises ON blocks.exerciseId = exercises.id
-        LEFT JOIN blocks AS parent ON blocks.parentId = parent.id
-        WHERE blocks.sessionId IN (SELECT DISTINCT sessionId FROM session_logs WHERE completedAt >= :since)
-        GROUP BY exercises.id
-        ORDER BY sets DESC, exercises.name
-        LIMIT 5
+        SELECT session_logs.id AS logId,
+               sessions.name AS sessionName,
+               session_logs.completedAt AS completedAt,
+               session_logs.durationSeconds AS durationSeconds,
+               session_logs.notes AS notes
+        FROM session_logs
+        INNER JOIN sessions ON session_logs.sessionId = sessions.id
+        ORDER BY session_logs.completedAt DESC
         """
     )
-    fun getTopExercises(since: LocalDateTime): Flow<List<ExerciseSets>>
+    fun getHistory(): Flow<List<HistoryEntry>>
 
     @Insert
     suspend fun insert(log: SessionLog): Long
@@ -65,4 +51,10 @@ interface SessionLogDao {
 
     @Delete
     suspend fun delete(log: SessionLog)
+
+    @Query("UPDATE session_logs SET notes = :notes WHERE id = :id")
+    suspend fun updateNotes(id: Int, notes: String?)
+
+    @Query("DELETE FROM session_logs WHERE id = :id")
+    suspend fun deleteById(id: Int)
 }

@@ -1,8 +1,8 @@
 package com.example.streetset.presentation.stats
 
+import com.example.streetset.data.dao.Consistency
 import com.example.streetset.data.dao.SessionLogDao
 import com.example.streetset.data.entities.SessionLog
-import com.example.streetset.presentation.sessiondetail.model.TrainingProtocol
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.isoDayNumber
@@ -15,7 +15,11 @@ data class DayActivity(val sessions: Int, val seconds: Int)
 
 data class WeekCount(val weekStart: LocalDate, val sessions: Int)
 
-data class MixSlice(val protocol: TrainingProtocol, val sets: Int, val fraction: Float)
+/** How many of the sessions planned up to yesterday were actually completed. */
+data class ConsistencyStats(val planned: Int, val completed: Int) {
+    val missed: Int get() = (planned - completed).coerceAtLeast(0)
+    val rate: Float get() = if (planned > 0) completed.toFloat() / planned else 0f
+}
 
 data class StatsData(
     val today: LocalDate,
@@ -26,8 +30,8 @@ data class StatsData(
     val totalSessions: Int,
     val totalSeconds: Long,
     val weeks: List<WeekCount>,
-    val mix: List<MixSlice>,
-    val topExercises: List<SessionLogDao.ExerciseSets>,
+    val consistency: ConsistencyStats,
+    val history: List<SessionLogDao.HistoryEntry>,
 )
 
 /** Monday of the week this date is in. */
@@ -39,8 +43,8 @@ fun heatmapStart(today: LocalDate): LocalDate =
 fun buildStats(
     today: LocalDate,
     logs: List<SessionLog>,
-    protocolSets: List<SessionLogDao.ProtocolSets>,
-    topExercises: List<SessionLogDao.ExerciseSets>,
+    consistency: Consistency,
+    history: List<SessionLogDao.HistoryEntry>,
 ): StatsData {
     val days = logs
         .groupBy { it.completedAt.date }
@@ -64,14 +68,6 @@ fun buildStats(
         WeekCount(start, sessionsPerWeek[start] ?: 0)
     }
 
-    val setsPerProtocol = protocolSets
-        .groupBy { row -> TrainingProtocol.entries.firstOrNull { it.name == row.protocol } ?: TrainingProtocol.NORMAL }
-        .mapValues { (_, rows) -> rows.sumOf { it.sets } }
-    val totalSets = setsPerProtocol.values.sum()
-    val mix = setsPerProtocol.entries
-        .sortedByDescending { it.value }
-        .map { MixSlice(it.key, it.value, if (totalSets > 0) it.value.toFloat() / totalSets else 0f) }
-
     return StatsData(
         today = today,
         heatmapStart = heatmapStart(today),
@@ -80,7 +76,7 @@ fun buildStats(
         totalSessions = logs.size,
         totalSeconds = logs.sumOf { it.durationSeconds.toLong() },
         weeks = weeks,
-        mix = mix,
-        topExercises = topExercises,
+        consistency = ConsistencyStats(planned = consistency.planned, completed = consistency.completed),
+        history = history,
     )
 }

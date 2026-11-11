@@ -19,12 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.streetset.presentation.stats.components.ActivitySection
+import com.example.streetset.presentation.stats.components.ConsistencySection
 import com.example.streetset.presentation.stats.components.EmptyStats
-import com.example.streetset.presentation.stats.components.MixSection
+import com.example.streetset.presentation.stats.components.HistorySection
+import com.example.streetset.presentation.stats.components.HistorySheets
 import com.example.streetset.presentation.stats.components.StatsError
 import com.example.streetset.presentation.stats.components.StatsSkeleton
 import com.example.streetset.presentation.stats.components.SummaryRow
-import com.example.streetset.presentation.stats.components.TopExercisesSection
 import com.example.streetset.presentation.stats.components.WeeksSection
 import com.example.streetset.ui.components.BOTTOM_BAR_HEIGHT
 import com.example.streetset.ui.components.TopBar
@@ -38,9 +39,11 @@ import org.koin.compose.viewmodel.koinViewModel
 fun StatsScreen(
     hazeState: HazeState,
     viewModel: StatsViewModel = koinViewModel<StatsViewModel>(),
+    historyViewModel: HistoryOptionsViewModel = koinViewModel<HistoryOptionsViewModel>(),
 ) {
     val colors = LocalAppColors.current
     val state by viewModel.state.collectAsState()
+    val historyState by historyViewModel.state.collectAsState()
     val listState = rememberLazyListState()
 
     val scrolled by remember {
@@ -76,12 +79,18 @@ fun StatsScreen(
                     item(key = "summary") { SummaryRow(stats) }
                     item(key = "activity") { ActivitySection(stats) }
 
-                    if (stats.totalSessions == 0) {
+                    if (stats.totalSessions == 0 && stats.consistency.planned == 0 && stats.history.isEmpty()) {
                         item(key = "empty") { EmptyStats() }
                     } else {
-                        item(key = "weeks") { WeeksSection(stats.weeks) }
-                        if (stats.mix.isNotEmpty()) item(key = "mix") { MixSection(stats.mix) }
-                        if (stats.topExercises.isNotEmpty()) item(key = "top") { TopExercisesSection(stats.topExercises) }
+                        if (stats.totalSessions > 0) item(key = "weeks") { WeeksSection(stats.weeks) }
+                        if (stats.consistency.planned > 0) {
+                            item(key = "consistency") { ConsistencySection(stats.consistency) }
+                        }
+                        if (stats.history.isNotEmpty()) {
+                            item(key = "history") {
+                                HistorySection(stats.history, onLongClick = historyViewModel::showOptions)
+                            }
+                        }
                     }
                 }
             }
@@ -93,5 +102,7 @@ fun StatsScreen(
             hazeState = if (success) hazeState else null,
             modifier = Modifier.align(Alignment.TopCenter),
         )
+
+        HistorySheets(state = historyState, viewModel = historyViewModel)
     }
 }

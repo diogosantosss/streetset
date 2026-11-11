@@ -12,6 +12,7 @@ import com.example.streetset.presentation.settings.SettingsViewModel
 import com.example.streetset.presentation.settings.ThemeRepository
 import com.example.streetset.presentation.settings.VolumeRepository
 import com.example.streetset.presentation.settings.VolumeViewModel
+import com.example.streetset.presentation.stats.HistoryOptionsViewModel
 import com.example.streetset.presentation.stats.StatsViewModel
 import com.example.streetset.presentation.training.TrainingSessionViewModel
 import org.koin.core.context.startKoin
@@ -39,6 +40,7 @@ val appModule = module {
 
     // Stats
     viewModelOf(::StatsViewModel)
+    viewModelOf(::HistoryOptionsViewModel)
 
     // Settings
     viewModelOf(::SettingsViewModel)

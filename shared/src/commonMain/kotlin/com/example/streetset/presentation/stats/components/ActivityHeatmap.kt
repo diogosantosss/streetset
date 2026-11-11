@@ -41,42 +41,30 @@ import com.example.streetset.presentation.calendar.fullTitle
 import com.example.streetset.presentation.stats.DayActivity
 import com.example.streetset.presentation.stats.HeatmapWeeks
 import com.example.streetset.presentation.stats.StatsData
+import com.example.streetset.ui.theme.AppColors
 import com.example.streetset.ui.theme.LocalAppColors
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
-import kotlin.math.ceil
 
 private val CellSize = 18.dp
 private val CellGap = 4.dp
 private val MonthLabelHeight = 20.dp
 private val WeekdayLabelWidth = 34.dp
 
-private enum class HeatmapMetric(val label: String) {
-    Sessions("Sessions"),
-    Time("Time");
-
-    fun valueOf(day: DayActivity): Int = when (this) {
-        Sessions -> day.sessions
-        Time -> day.seconds
-    }
-}
+/** Seconds per heatmap step: 20, 40 and 60 minutes, then anything above. */
+private const val LevelStepSeconds = 20 * 60
 
 @Composable
 internal fun ActivitySection(stats: StatsData) {
-    var metric by remember { mutableStateOf(HeatmapMetric.Sessions) }
     var selected by remember { mutableStateOf<LocalDate?>(null) }
 
     Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SectionCaption("ACTIVITY", modifier = Modifier.weight(1f))
-            MetricSwitch(selected = metric, onSelect = { metric = it })
-        }
+        SectionCaption("ACTIVITY")
         Spacer(modifier = Modifier.height(12.dp))
 
         Heatmap(
             stats = stats,
-            metric = metric,
             selected = selected,
             onSelect = { date -> selected = if (selected == date) null else date },
         )
@@ -91,31 +79,8 @@ internal fun ActivitySection(stats: StatsData) {
 }
 
 @Composable
-private fun MetricSwitch(selected: HeatmapMetric, onSelect: (HeatmapMetric) -> Unit) {
-    val colors = LocalAppColors.current
-
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        HeatmapMetric.entries.forEach { metric ->
-            val isSelected = metric == selected
-            Text(
-                text = metric.label,
-                fontSize = 12.sp,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (isSelected) colors.accent else colors.textSecondary,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(if (isSelected) colors.accent.copy(alpha = 0.15f) else Color.Transparent)
-                    .clickable { onSelect(metric) }
-                    .padding(horizontal = 10.dp, vertical = 5.dp),
-            )
-        }
-    }
-}
-
-@Composable
 private fun Heatmap(
     stats: StatsData,
-    metric: HeatmapMetric,
     selected: LocalDate?,
     onSelect: (LocalDate) -> Unit,
 ) {
@@ -130,8 +95,6 @@ private fun Heatmap(
             positioned = true
         }
     }
-
-    val maxValue = remember(stats, metric) { stats.days.values.maxOfOrNull { metric.valueOf(it) } ?: 0 }
 
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val pitch = CellSize + CellGap
@@ -200,8 +163,6 @@ private fun Heatmap(
                                     date = date,
                                     today = stats.today,
                                     activity = stats.days[date],
-                                    metric = metric,
-                                    maxValue = maxValue,
                                     isSelected = date == selected,
                                     onClick = { onSelect(date) },
                                 )
@@ -219,20 +180,17 @@ private fun HeatCell(
     date: LocalDate,
     today: LocalDate,
     activity: DayActivity?,
-    metric: HeatmapMetric,
-    maxValue: Int,
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
     val colors = LocalAppColors.current
     val isFuture = date > today
     val shape = RoundedCornerShape(4.dp)
-    val level = if (activity == null) 0 else levelFor(metric.valueOf(activity), maxValue)
+    val level = levelFor(activity?.seconds ?: 0)
 
     val fill = when {
         isFuture -> Color.Transparent
-        level == 0 -> colors.textTertiary.copy(alpha = 0.12f)
-        else -> colors.accent.copy(alpha = 0.25f + 0.25f * (level - 1))
+        else -> levelFill(level, colors)
     }
     val border = when {
         isSelected -> Modifier.border(1.5.dp, colors.textPrimary, shape)
@@ -250,35 +208,45 @@ private fun HeatCell(
     )
 }
 
-/** 0 when there is no activity, otherwise 1 to 4 relative to the busiest day. */
-private fun levelFor(value: Int, max: Int): Int {
-    if (value <= 0 || max <= 0) return 0
-    return ceil(value.toFloat() / max * 4).toInt().coerceIn(1, 4)
+/** 0 when there was no training, otherwise 1..4 for the 20/40/60 minute buckets. */
+private fun levelFor(seconds: Int): Int = when {
+    seconds <= 0 -> 0
+    seconds <= LevelStepSeconds -> 1
+    seconds <= LevelStepSeconds * 2 -> 2
+    seconds <= LevelStepSeconds * 3 -> 3
+    else -> 4
 }
+
+private fun levelFill(level: Int, colors: AppColors): Color =
+    if (level <= 0) colors.textTertiary.copy(alpha = 0.12f)
+    else colors.accent.copy(alpha = 0.25f + 0.25f * (level - 1))
+
+private val LevelLabels = listOf("0", "20m", "40m", "60m", "60m+")
 
 @Composable
 private fun HeatmapLegend() {
     val colors = LocalAppColors.current
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Spacer(modifier = Modifier.weight(1f))
-        Text("Less", fontSize = 10.sp, color = colors.textTertiary)
-        repeat(5) { level ->
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(
-                        if (level == 0) colors.textTertiary.copy(alpha = 0.12f)
-                        else colors.accent.copy(alpha = 0.25f + 0.25f * (level - 1)),
-                    ),
-            )
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LevelLabels.forEachIndexed { level, label ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.width(44.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(levelFill(level, colors)),
+                )
+                Text(
+                    text = label,
+                    fontSize = 9.sp,
+                    color = colors.textTertiary,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
+            }
         }
-        Text("More", fontSize = 10.sp, color = colors.textTertiary)
     }
 }
 

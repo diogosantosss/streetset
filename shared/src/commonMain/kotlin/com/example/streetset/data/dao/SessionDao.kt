@@ -49,6 +49,17 @@ interface SessionDao {
     @Query("SELECT id FROM sessions WHERE date = :date AND name = :name COLLATE NOCASE LIMIT 1")
     suspend fun findIdByDateAndName(date: LocalDate, name: String): Int?
 
+    @Query(
+        """
+        SELECT COUNT(DISTINCT sessions.id) AS planned,
+               COUNT(DISTINCT CASE WHEN session_logs.id IS NOT NULL THEN sessions.id END) AS completed
+        FROM sessions
+        LEFT JOIN session_logs ON session_logs.sessionId = sessions.id
+        WHERE sessions.date >= :since AND sessions.date < :before
+        """
+    )
+    fun getConsistency(since: LocalDate, before: LocalDate): Flow<Consistency>
+
     @Query("SELECT COALESCE(MAX(position), -1) + 1 FROM sessions WHERE date = :date")
     suspend fun nextPosition(date: LocalDate): Int
 
@@ -74,3 +85,6 @@ data class DaySession(
 )
 
 data class DaySummary(val date: LocalDate, val total: Int, val completed: Int)
+
+/** Planned sessions up to yesterday, and how many of them were completed. */
+data class Consistency(val planned: Int, val completed: Int)

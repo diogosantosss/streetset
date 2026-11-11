@@ -9,11 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.streetset.data.dao.SessionLogDao
-import com.example.streetset.presentation.sessiondetail.model.TrainingProtocol
 import com.example.streetset.presentation.stats.BarWeeks
+import com.example.streetset.presentation.stats.ConsistencyStats
 import com.example.streetset.presentation.stats.DayActivity
 import com.example.streetset.presentation.stats.HeatmapWeeks
-import com.example.streetset.presentation.stats.MixSlice
 import com.example.streetset.presentation.stats.StatsData
 import com.example.streetset.presentation.stats.WeekCount
 import com.example.streetset.presentation.stats.heatmapStart
@@ -22,6 +21,7 @@ import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 
@@ -58,7 +58,9 @@ fun previewStats(empty: Boolean = false): StatsData {
                     else -> 0
                 }
                 if (sessions > 0) {
-                    put(date, DayActivity(sessions = sessions, seconds = sessions * 3_600 + (index % 4) * 900))
+                    // 15 to 55 minutes per session, so the heatmap shows every level
+                    val perSessionSeconds = 900 + (index % 5) * 600
+                    put(date, DayActivity(sessions = sessions, seconds = sessions * perSessionSeconds))
                 }
             }
         }
@@ -81,26 +83,36 @@ fun previewStats(empty: Boolean = false): StatsData {
         totalSessions = days.values.sumOf { it.sessions },
         totalSeconds = days.values.sumOf { it.seconds.toLong() },
         weeks = if (empty) weeks.map { it.copy(sessions = 0) } else weeks,
-        mix = if (empty) {
-            emptyList()
+        consistency = if (empty) {
+            ConsistencyStats(planned = 0, completed = 0)
         } else {
-            listOf(
-                MixSlice(TrainingProtocol.NORMAL, sets = 48, fraction = 0.40f),
-                MixSlice(TrainingProtocol.BACK_OFF, sets = 30, fraction = 0.25f),
-                MixSlice(TrainingProtocol.TOP_SET, sets = 18, fraction = 0.15f),
-                MixSlice(TrainingProtocol.WARM_UP, sets = 14, fraction = 0.12f),
-                MixSlice(TrainingProtocol.CIRCUIT, sets = 10, fraction = 0.08f),
-            )
+            ConsistencyStats(planned = 48, completed = 41)
         },
-        topExercises = if (empty) {
+        history = if (empty) {
             emptyList()
         } else {
             listOf(
-                SessionLogDao.ExerciseSets("Back Squat", 24),
-                SessionLogDao.ExerciseSets("Bench Press", 20),
-                SessionLogDao.ExerciseSets("Pull-ups", 18),
-                SessionLogDao.ExerciseSets("Romanian Deadlift", 12),
-                SessionLogDao.ExerciseSets("Overhead Press", 9),
+                SessionLogDao.HistoryEntry(
+                    logId = 1,
+                    sessionName = "Push Day",
+                    completedAt = LocalDateTime(2026, 11, 1, 18, 30),
+                    durationSeconds = 3_720,
+                    notes = "Bench felt strong, added 2.5kg on the top set.",
+                ),
+                SessionLogDao.HistoryEntry(
+                    logId = 2,
+                    sessionName = "Pull Day",
+                    completedAt = LocalDateTime(2026, 10, 30, 7, 15),
+                    durationSeconds = 2_940,
+                    notes = null,
+                ),
+                SessionLogDao.HistoryEntry(
+                    logId = 3,
+                    sessionName = "Leg Day",
+                    completedAt = LocalDateTime(2026, 10, 28, 19, 0),
+                    durationSeconds = 4_500,
+                    notes = "Squat depth better. Left knee a bit sore after.",
+                ),
             )
         },
     )
@@ -114,8 +126,8 @@ private fun StatsContentPreview() {
         SummaryRow(stats)
         ActivitySection(stats)
         WeeksSection(stats.weeks)
-        MixSection(stats.mix)
-        TopExercisesSection(stats.topExercises)
+        ConsistencySection(stats.consistency)
+        HistorySection(stats.history, onLongClick = {})
     }
 }
 

@@ -2,6 +2,7 @@ package com.example.streetset.presentation.stats
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.streetset.data.dao.SessionDao
 import com.example.streetset.data.dao.SessionLogDao
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.Delay
@@ -33,6 +34,7 @@ sealed interface StatsState {
 class StatsViewModel : ViewModel(), KoinComponent {
 
     private val sessionLogDao: SessionLogDao by inject()
+    private val sessionDao: SessionDao by inject()
 
     private val _state = MutableStateFlow<StatsState>(StatsState.Loading)
     val state: StateFlow<StatsState> = _state.asStateFlow()
@@ -53,14 +55,15 @@ class StatsViewModel : ViewModel(), KoinComponent {
         loadJob = viewModelScope.launch {
             delay(3.seconds)
             val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-            val since = heatmapStart(today).atTime(0, 0)
+            val windowStart = heatmapStart(today)
+            val since = windowStart.atTime(0, 0)
 
             combine(
                 sessionLogDao.getSince(since),
-                sessionLogDao.getProtocolSets(since),
-                sessionLogDao.getTopExercises(since),
-            ) { logs, protocols, exercises ->
-                StatsState.Success(buildStats(today, logs, protocols, exercises))
+                sessionDao.getConsistency(since = windowStart, before = today),
+                sessionLogDao.getHistory(),
+            ) { logs, consistency, history ->
+                StatsState.Success(buildStats(today, logs, consistency, history))
             }
                 .catch { throwable ->
                     Napier.e("Failed to load stats", throwable, TAG)
