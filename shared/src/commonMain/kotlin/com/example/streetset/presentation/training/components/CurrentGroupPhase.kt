@@ -40,6 +40,7 @@ import com.example.streetset.ui.theme.TrainingProtocolColors
 fun CurrentGroupPhase(
     step: WorkoutStep,
     group: ActiveProtocolState.Group,
+    nextStep: WorkoutStep?,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
@@ -50,8 +51,7 @@ fun CurrentGroupPhase(
 
     Column(modifier = modifier.fillMaxWidth()) {
         PhaseWorkingHeader(
-            protocolLabel = step.protocolDisplay.uppercase(),
-            accent = accent,
+            protocol = step.protocol,
             trailing = "Round ${step.setIndex} of ${step.totalSetsInBlock}",
             title = if (children.size == 1) "1 exercise" else "${children.size} exercises",
             current = step.setIndex,
@@ -78,31 +78,30 @@ fun CurrentGroupPhase(
         val hasFooter = rest > 0 || block.rpe != null
         if (hasFooter) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 20.dp),
+                modifier = Modifier.padding(top = 18.dp),
             ) {
                 if (rest > 0) {
                     val target = if (group.isLastRound) step.protocolDisplay.lowercase() else "round"
-                    MetaIconText(
+                    MetaChip(
                         icon = Lucide.Timer,
-                        text = "${formatRestSecondsShort(rest)} rest after this $target",
-                        color = colors.textTertiary,
-                        fontSize = 13.sp,
-                        iconSize = 13.dp,
+                        text = "${formatRestSecondsShort(rest)} after this $target",
                     )
                 }
                 block.rpe?.let {
-                    MetaIconText(
+                    MetaChip(
                         icon = Lucide.Gauge,
                         text = "RPE $it",
-                        color = colors.textTertiary,
-                        fontSize = 13.sp,
-                        iconSize = 13.dp,
                     )
                 }
             }
         }
+
+        NextUpCard(
+            step = nextStep,
+            modifier = Modifier.padding(top = 24.dp),
+        )
     }
 }
 
@@ -216,6 +215,7 @@ private fun CurrentGroupPhaseCircuitPreview() {
             CurrentGroupPhase(
                 step = step,
                 group = ActiveProtocolState.Group.from(step),
+                nextStep = null,
             )
         }
     }
@@ -238,6 +238,7 @@ private fun CurrentGroupPhaseSupersetPreview() {
             CurrentGroupPhase(
                 step = step,
                 group = ActiveProtocolState.Group.from(step),
+                nextStep = null,
             )
         }
     }

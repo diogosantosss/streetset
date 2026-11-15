@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.Activity
+import com.composables.icons.lucide.Gauge
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Timer
 import com.example.streetset.data.entities.Block
@@ -49,6 +50,7 @@ import com.example.streetset.ui.theme.TrainingProtocolColors
 fun MetronomePhase(
     step: WorkoutStep,
     metronome: ActiveProtocolState.Metronome,
+    nextStep: WorkoutStep?,
     onStart: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -71,8 +73,7 @@ fun MetronomePhase(
 
     Column(modifier = modifier.fillMaxWidth()) {
         PhaseWorkingHeader(
-            protocolLabel = step.protocolDisplay.uppercase(),
-            accent = accent,
+            protocol = step.protocol,
             trailing = "Set ${step.setIndex} of ${step.totalSetsInBlock}",
             title = step.exerciseName,
             current = step.setIndex,
@@ -161,51 +162,43 @@ fun MetronomePhase(
         }
 
         Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = 16.dp),
         ) {
-            MetaIconText(
-                icon = Lucide.Activity,
-                text = "${metronome.bpm} BPM",
-                color = colors.textSecondary,
-                fontSize = 15.sp,
-                iconSize = 14.dp,
-            )
+            MetaChip(icon = Lucide.Activity, text = "${metronome.bpm} BPM")
         }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 28.dp),
-        ) {
-            StatCard(
-                value = step.repsDisplay,
-                unit = null,
-                label = "REPS",
-                compact = true,
-                modifier = Modifier.weight(1f),
-            )
-            StatCard(
-                value = step.loadValue,
-                unit = step.loadUnit,
-                label = "LOAD",
-                compact = true,
-                modifier = Modifier.weight(1f),
-            )
-        }
+        SetMetricsCard(
+            reps = step.repsDisplay,
+            loadValue = step.loadValue,
+            loadUnit = step.loadUnit,
+            modifier = Modifier.padding(top = 28.dp),
+        )
 
-        if (step.restSeconds > 0) {
-            MetaIconText(
-                icon = Lucide.Timer,
-                text = "${formatRestSecondsShort(step.restSeconds)} rest after this set",
-                color = colors.textTertiary,
-                fontSize = 13.sp,
-                iconSize = 13.dp,
+        val hasMeta = step.restSeconds > 0 || step.rpe != null
+        if (hasMeta) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.padding(top = 20.dp),
-            )
+            ) {
+                if (step.restSeconds > 0) {
+                    MetaChip(
+                        icon = Lucide.Timer,
+                        text = formatRestSecondsShort(step.restSeconds),
+                    )
+                }
+                step.rpe?.let { rpe ->
+                    MetaChip(icon = Lucide.Gauge, text = "RPE $rpe")
+                }
+            }
         }
+
+        NextUpCard(
+            step = nextStep,
+            modifier = Modifier.padding(top = 28.dp),
+        )
     }
 }
 
@@ -240,6 +233,7 @@ private fun MetronomePhaseIdlePreview() {
             MetronomePhase(
                 step = previewMetronomeStep(),
                 metronome = ActiveProtocolState.Metronome(bpm = 60),
+                nextStep = null,
                 onStart = {},
             )
         }
@@ -254,6 +248,7 @@ private fun MetronomePhaseRunningPreview() {
             MetronomePhase(
                 step = previewMetronomeStep(),
                 metronome = ActiveProtocolState.Metronome(uiState = MetronomeUiState.RUNNING, bpm = 60, beatCount = 3),
+                nextStep = null,
                 onStart = {},
             )
         }

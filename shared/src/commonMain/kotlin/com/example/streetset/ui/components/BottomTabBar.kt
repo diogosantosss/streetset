@@ -48,53 +48,9 @@ fun BottomTabBar(
     hazeState: HazeState? = null,
 ) {
     val colors = LocalAppColors.current
-    val shape = RoundedCornerShape(28.dp)
-    val isLightBackground = colors.background.luminance() > 0.5f
 
-    val blurModifier = if (hazeState != null) {
-        val material = if (isLightBackground) {
-            HazeMaterials.thin(colors.surface)
-        } else {
-            HazeMaterials.thin(colors.background)
-        }
-
-        val style = material.then {
-            progressive(HazeProgressive.topFade())
-        }
-
-        Modifier.hazeBlur(
-            input = HazeInput.Backdrop(hazeState),
-            style = style,
-        )
-
-    } else { Modifier }
-
-    val overlayColor = if (isLightBackground) {
-        colors.surface.copy(alpha = 0.72f)
-    } else {
-        colors.surfaceHigh.copy(alpha = 0.45f)
-    }
-
-    val shadowColor = if (isLightBackground) colors.shadow else Color.Black
-
-    Box(
-        modifier = modifier
-            .shadow(
-                elevation = 16.dp,
-                shape = shape,
-                clip = false,
-                ambientColor = shadowColor,
-                spotColor = shadowColor,
-            )
-            .clip(shape)
-            .then(blurModifier)
-            .background(overlayColor)
-            .border(1.dp, colors.border.copy(alpha = 0.5f), shape)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
+    BottomBar(modifier, hazeState) {
+        Row(horizontalArrangement = Arrangement.SpaceEvenly) {
             Tab.entries.forEach { tab ->
                 val selected = tab == selectedTab
 
@@ -116,7 +72,7 @@ fun BottomTabBar(
                         .pointerInput(tab) {
                             detectTapGestures { onTabSelected(tab) }
                         }
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Icon(
                         imageVector = tab.icon,

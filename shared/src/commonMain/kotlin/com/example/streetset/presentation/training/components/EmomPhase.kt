@@ -35,6 +35,7 @@ fun EmomPhase(
     totalRounds: Int,
     secondsLeft: Int,
     prepareSecondsLeft: Int,
+    nextStep: WorkoutStep?,
     intervalSeconds: Int = 60,
     onStart: () -> Unit,
     modifier: Modifier = Modifier,
@@ -51,11 +52,11 @@ fun EmomPhase(
     TimedProtocolScaffold(
         title = step.exerciseName,
         highlight = "${step.repsDisplay} REPS",
-        protocolLabel = step.protocolDisplay,
-        accent = accent,
+        protocol = step.protocol,
         progress = progress,
         progressLabel = "emom_progress",
         footer = "Every Minute On the Minute",
+        nextStep = nextStep,
         modifier = modifier,
         extraBelowRing = {
             if (emomUiState == EmomUiState.RUNNING) {
@@ -136,6 +137,7 @@ private fun EmomPhasePreview() {
         totalRounds = 5,
         secondsLeft = 60,
         prepareSecondsLeft = 5,
+        nextStep = null,
         onStart = {},
     )
 }

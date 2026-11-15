@@ -45,6 +45,8 @@ data class TrainingSessionUiState(
     val sessionPaused: Boolean = false,
     val awaitingFinish: Boolean = false,
     val restSecondsLeft: Long = 0L,
+    /** Planned rest for the current break. Grows/shrinks when the user adjusts it. */
+    val restTotalSeconds: Int = 0,
     val restEndsAtMillis: Long = 0L,
     val protocol: ActiveProtocolState = ActiveProtocolState.Idle,
 ) {

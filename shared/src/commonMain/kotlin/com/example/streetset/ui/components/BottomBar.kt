@@ -37,7 +37,7 @@ val BOTTOM_BAR_HEIGHT: Dp = 128.dp
 @Composable
 fun BottomBar(
     modifier: Modifier = Modifier,
-    hazeState: HazeState = HazeState(),
+    hazeState: HazeState? = null,
     visible: Boolean = true,
     enter: EnterTransition = bottomBarEnter,
     exit: ExitTransition = bottomBarExit,
@@ -52,20 +52,19 @@ fun BottomBar(
         val colors = LocalAppColors.current
         val shape = RoundedCornerShape(28.dp)
         val isLightBackground = colors.background.luminance() > 0.5f
-        val material = if (isLightBackground) HazeMaterials.thin(colors.surface) else HazeMaterials.thin(colors.background)
-        val blurStyle = material.then { progressive(HazeProgressive.topFade()) }
+
+        val blurStyle = HazeMaterials.thin(colors.background).then { progressive(HazeProgressive.topFade()) }
         val overlayColor = if (isLightBackground) colors.surface.copy(alpha = 0.72f) else colors.surfaceHigh.copy(alpha = 0.45f)
         val shadowColor = if (isLightBackground) colors.shadow else Color.Black
 
         Row(
             modifier = Modifier
-                .fillMaxWidth()
                 .shadow(16.dp, shape, clip = false, ambientColor = shadowColor, spotColor = shadowColor)
                 .clip(shape)
                 .hazeBlur(input = HazeInput.Backdrop(hazeState), style = blurStyle)
                 .background(overlayColor)
                 .border(1.dp, colors.border.copy(alpha = 0.5f), shape)
-                .padding(horizontal = 18.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             content = content,
@@ -76,5 +75,5 @@ fun BottomBar(
 @Preview
 @Composable
 fun BottomBarPreview() {
-    BottomBar { Text("Test") }
+    BottomBar { Text("this is a bottom bar test") }
 }

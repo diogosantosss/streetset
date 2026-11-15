@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -47,12 +48,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.streetset.presentation.sessiondetail.model.TrainingProtocol
+import com.example.streetset.presentation.training.model.WorkoutStep
 import com.example.streetset.ui.theme.LocalAppColors
+import com.example.streetset.ui.theme.TrainingProtocolColors
 
 @Composable
 internal fun PhaseWorkingHeader(
-    protocolLabel: String,
-    accent: Color,
+    protocol: TrainingProtocol,
     trailing: String,
     title: String,
     current: Int,
@@ -61,23 +64,11 @@ internal fun PhaseWorkingHeader(
     ellipsizeTitle: Boolean = true,
 ) {
     val colors = LocalAppColors.current
+    val accent = TrainingProtocolColors.colorFor(protocol.name, colors.accent)
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .clip(CircleShape)
-                    .background(accent),
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = protocolLabel,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.8.sp,
-                color = accent,
-            )
+            ProtocolChip(protocol = protocol)
             Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = trailing,
@@ -117,19 +108,34 @@ internal fun SetProgressBar(
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.fillMaxWidth(),
     ) {
         repeat(total) { index ->
             val number = index + 1
+            val isCurrent = number == current
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(3.dp)
+                    .height(if (isCurrent) 4.dp else 3.dp)
+                    .then(
+                        if (isCurrent) {
+                            Modifier.shadow(
+                                elevation = 10.dp,
+                                shape = RoundedCornerShape(2.dp),
+                                clip = false,
+                                ambientColor = color,
+                                spotColor = color,
+                            )
+                        } else {
+                            Modifier
+                        },
+                    )
                     .clip(RoundedCornerShape(2.dp))
                     .background(
                         when {
                             number < current -> color.copy(alpha = 0.45f)
-                            number == current -> color
+                            isCurrent -> color
                             else -> track
                         },
                     ),
@@ -142,61 +148,51 @@ internal fun SetProgressBar(
 internal fun TimedProtocolScaffold(
     title: String,
     highlight: String,
-    protocolLabel: String,
-    accent: Color,
+    protocol: TrainingProtocol,
     progress: Float,
     progressLabel: String,
     footer: String,
+    nextStep: WorkoutStep?,
     modifier: Modifier = Modifier,
     extraBelowRing: @Composable (() -> Unit)? = null,
     ringContent: @Composable BoxScope.() -> Unit,
 ) {
     val colors = LocalAppColors.current
+    val accent = TrainingProtocolColors.colorFor(protocol.name, colors.accent)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 24.dp),
+            .padding(top = 16.dp),
     ) {
+        ProtocolChip(protocol = protocol)
+
         Text(
             text = title,
             fontSize = 28.sp,
             fontWeight = FontWeight.SemiBold,
             color = colors.textPrimary,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 12.dp),
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .padding(horizontal = 12.dp),
         )
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Text(
+            text = highlight,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = accent,
             modifier = Modifier.padding(top = 10.dp),
-        ) {
-            Text(
-                text = highlight,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = accent,
-            )
-            Text(
-                text = "•",
-                fontSize = 13.sp,
-                color = colors.textTertiary,
-            )
-            Text(
-                text = protocolLabel.uppercase(),
-                fontSize = 13.sp,
-                color = colors.textTertiary,
-            )
-        }
+        )
 
         ProtocolProgressRing(
             progress = progress,
             accent = accent,
             progressLabel = progressLabel,
             modifier = Modifier
-                .padding(top = 36.dp)
+                .padding(top = 32.dp)
                 .size(248.dp),
             content = ringContent,
         )
@@ -208,6 +204,11 @@ internal fun TimedProtocolScaffold(
             fontSize = 13.sp,
             color = colors.textTertiary,
             modifier = Modifier.padding(top = 20.dp),
+        )
+
+        NextUpCard(
+            step = nextStep,
+            modifier = Modifier.padding(top = 28.dp),
         )
     }
 }

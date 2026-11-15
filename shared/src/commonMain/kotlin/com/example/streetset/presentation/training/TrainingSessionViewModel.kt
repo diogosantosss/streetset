@@ -239,6 +239,7 @@ class TrainingSessionViewModel(
                     phase = TrainingPhase.Finished,
                     currentIndex = index,
                     restSecondsLeft = 0L,
+                    restTotalSeconds = 0,
                     restEndsAtMillis = 0L,
                 )
             }
@@ -254,6 +255,7 @@ class TrainingSessionViewModel(
                 phase = TrainingPhase.Working(step),
                 currentIndex = index,
                 restSecondsLeft = 0L,
+                restTotalSeconds = 0,
                 restEndsAtMillis = 0L,
             )
         }
@@ -272,7 +274,7 @@ class TrainingSessionViewModel(
 
         when {
             nextIndex >= state.queue.size -> awaitFinish()
-            rest > 0 -> startRest(step, nextIndex, rest)
+            rest > 0 -> startRest(step, rest)
             else -> goToWorking(nextIndex)
         }
     }
@@ -406,7 +408,7 @@ class TrainingSessionViewModel(
 
     // endregion
 
-    private fun startRest(step: WorkoutStep, nextIndex: Int, restSeconds: Int) {
+    private fun startRest(step: WorkoutStep, restSeconds: Int) {
         val endsAt = Time.nowMillis() + restSeconds * 1000L
 
         updateState {
@@ -414,20 +416,57 @@ class TrainingSessionViewModel(
                 phase = TrainingPhase.Rest(step, endsAt),
                 restEndsAtMillis = endsAt,
                 restSecondsLeft = restSeconds.toLong(),
+                restTotalSeconds = restSeconds,
             )
         }
 
+        startRestCountdown(endsAt)
+    }
+
+    /**
+     * Runs the rest countdown until [endsAt], then moves on to the next step.
+     * Cancelling a previous job first lets [adjustRest] restart the same timer.
+     */
+    private fun startRestCountdown(endsAt: Long) {
         restJob?.cancel()
         restJob = viewModelScope.launch {
             try {
                 restTimer.countdown(endsAt).collect { left ->
                     updateState { it.copy(restSecondsLeft = left) }
-                    if (left <= 0) goToWorking(nextIndex)
+                    if (left <= 0) goToWorking(_uiState.value.currentIndex + 1)
                 }
             } catch (e: CancellationException) {
                 throw e
             }
         }
+    }
+
+    /**
+     * Adds [deltaSeconds] to the running rest (used by the −15s / +15s buttons).
+     *
+     * The absolute end instant is shifted and the countdown restarted, while the
+     * total grows/shrinks so the progress ring stretches with the change. A
+     * negative delta never drops below [MinRestSeconds].
+     */
+    fun adjustRest(deltaSeconds: Int) {
+        val state = _uiState.value
+        if (state.phase !is TrainingPhase.Rest) return
+
+        val now = Time.nowMillis()
+        val endsAt = (state.restEndsAtMillis + deltaSeconds * 1000L)
+            .coerceAtLeast(now + MinRestSeconds * 1000L)
+        val total = (state.restTotalSeconds + deltaSeconds).coerceAtLeast(MinRestSeconds)
+        val left = ((endsAt - now + 999L) / 1000L).coerceAtLeast(1L)
+
+        updateState {
+            it.copy(
+                restEndsAtMillis = endsAt,
+                restSecondsLeft = left,
+                restTotalSeconds = total,
+            )
+        }
+
+        startRestCountdown(endsAt)
     }
 
     // endregion
@@ -547,5 +586,8 @@ class TrainingSessionViewModel(
     companion object {
         private const val TAG = "TrainingSessionViewModel"
         private const val NOTES_UPDATE_DELAY_MILLIS = 400L
+
+        /** Floor for the adjustable rest, so −15s can never reach zero. */
+        private const val MinRestSeconds = 5
     }
 }

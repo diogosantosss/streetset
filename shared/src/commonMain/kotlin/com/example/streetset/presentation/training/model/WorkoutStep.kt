@@ -39,6 +39,22 @@ data class WorkoutStep(
     val loadUnit: String?
         get() = loadPair.second
 
+    /** "80 kg" for numeric loads, "BW" for bodyweight, `null` when empty. */
+    val loadDisplay: String?
+        get() = loadValue.takeIf { it != "-" }?.let { value -> loadUnit?.let { "$value $it" } ?: value }
+
+    /** "10 reps with 80 kg" summary used by the "Up next" card, "10 reps" when bodyweight. */
+    val repsLoadDisplay: String
+        get() {
+            val reps = repsDisplay
+            val load = loadDisplay?.takeUnless { it.equals("BW", ignoreCase = true) }
+            return when {
+                reps == "-" -> load ?: "-"
+                load == null -> "$reps reps"
+                else -> "$reps reps with $load"
+            }
+        }
+
     val protocolDisplay: String
         get() = protocol.label
 

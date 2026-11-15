@@ -1,75 +1,70 @@
 package com.example.streetset.presentation.training.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.streetset.presentation.training.model.WorkoutStep
 import com.example.streetset.presentation.training.model.formatRestSecondsShort
-import com.example.streetset.util.Time
 import com.example.streetset.ui.theme.LocalAppColors
+
+/** Smallest rest the −15s button allows. Matches the ViewModel floor. */
+private const val MinAdjustableRestSeconds = 5L
 
 @Composable
 fun RestPhase(
     restSecondsLeft: Long,
-    restEndsAtMillis: Long,
+    restTotalSeconds: Int,
+    nextStep: WorkoutStep?,
+    onAdjust: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
     val accent = colors.accent
 
-    val totalRestSeconds = remember(restEndsAtMillis) {
-        val now = Time.nowMillis()
-        val diff = ((restEndsAtMillis - now + 999L) / 1000L).coerceAtLeast(1L)
-        diff
-    }
-
-    val targetProgress = remember(restEndsAtMillis, restSecondsLeft, totalRestSeconds) {
-        if (totalRestSeconds <= 0L) 0f else (restSecondsLeft.toFloat() / totalRestSeconds.toFloat()).coerceIn(0f, 1f)
+    val progress = if (restTotalSeconds <= 0) {
+        0f
+    } else {
+        (restSecondsLeft.toFloat() / restTotalSeconds.toFloat()).coerceIn(0f, 1f)
     }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 36.dp, bottom = 24.dp),
+            .padding(top = 24.dp),
     ) {
-        AnimatedVisibility(
-            visible = true,
-            enter = fadeIn(tween(240)) + slideInVertically(tween(240), initialOffsetY = { -it / 12 }),
-        ) {
-            Text(
-                text = "REST",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 1.6.sp,
-                color = colors.textTertiary,
-            )
-        }
+        ProtocolKicker(
+            text = "REST",
+            color = colors.textTertiary,
+            letterSpacing = 1.6.sp,
+        )
 
         ProtocolProgressRing(
-            progress = targetProgress,
+            progress = progress,
             accent = accent,
-            stroke = 6.dp,
+            stroke = 8.dp,
             animateDurationMillis = 320,
             progressLabel = "rest_progress",
             modifier = Modifier
                 .padding(top = 28.dp)
-                .size(236.dp),
+                .size(248.dp),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -93,10 +88,58 @@ fun RestPhase(
         }
 
         Text(
-            text = "${formatRestSecondsShort(totalRestSeconds.toInt())} total",
+            text = "${formatRestSecondsShort(restTotalSeconds)} total",
             fontSize = 12.sp,
             color = colors.textTertiary,
-            modifier = Modifier.padding(top = 10.dp),
+            modifier = Modifier.padding(top = 12.dp),
+        )
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(top = 22.dp),
+        ) {
+            RestAdjustButton(
+                label = "−15s",
+                enabled = restSecondsLeft > MinAdjustableRestSeconds,
+                onClick = { onAdjust(-15) },
+            )
+            RestAdjustButton(
+                label = "+15s",
+                enabled = true,
+                onClick = { onAdjust(15) },
+            )
+        }
+
+        NextUpCard(
+            step = nextStep,
+            modifier = Modifier.padding(top = 28.dp),
+        )
+    }
+}
+
+@Composable
+private fun RestAdjustButton(
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val colors = LocalAppColors.current
+    val contentAlpha = if (enabled) 1f else 0.4f
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(colors.surfaceHigh.copy(alpha = 0.6f))
+            .border(1.dp, colors.border.copy(alpha = 0.5f), CircleShape)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+    ) {
+        Text(
+            text = label,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = colors.textPrimary.copy(alpha = contentAlpha),
         )
     }
 }
@@ -107,14 +150,13 @@ private fun formatRest(seconds: Long): String {
     return "$m:$s"
 }
 
-
-
 @Preview(showBackground = true)
 @Composable
 private fun RestPhasePreview() {
-    val endsAt = Time.nowMillis() + 15000L
     RestPhase(
-        restSecondsLeft = 15,
-        restEndsAtMillis = endsAt,
+        restSecondsLeft = 90,
+        restTotalSeconds = 90,
+        nextStep = null,
+        onAdjust = {},
     )
 }

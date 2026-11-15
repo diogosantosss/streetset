@@ -9,55 +9,61 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.Gauge
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Timer
 import com.example.streetset.data.entities.Block
 import com.example.streetset.data.entities.PlannedSet
 import com.example.streetset.presentation.sessiondetail.model.BlockWithSets
 import com.example.streetset.presentation.sessiondetail.model.TrainingProtocol
 import com.example.streetset.presentation.training.model.WorkoutStep
-import com.example.streetset.ui.theme.LocalAppColors
-import com.example.streetset.ui.theme.TrainingProtocolColors
+import com.example.streetset.presentation.training.model.formatRestSecondsShort
 
 @Composable
 fun CurrentSetPhase(
     step: WorkoutStep,
+    nextStep: WorkoutStep?,
     modifier: Modifier = Modifier,
 ) {
-    val colors = LocalAppColors.current
-    val accent = TrainingProtocolColors.colorFor(step.protocol.name, colors.accent)
-
     Column(modifier = modifier.fillMaxWidth()) {
         PhaseWorkingHeader(
-            protocolLabel = step.protocolDisplay.uppercase(),
-            accent = accent,
+            protocol = step.protocol,
             trailing = "Set ${step.setIndex} of ${step.totalSetsInBlock}",
             title = step.exerciseName,
             current = step.setIndex,
             total = step.totalSetsInBlock,
         )
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 32.dp),
-        ) {
-            StatCard(
-                value = step.repsDisplay,
-                unit = null,
-                label = "REPS",
-                modifier = Modifier.weight(1f),
-            )
-            StatCard(
-                value = step.loadValue,
-                unit = step.loadUnit,
-                label = "LOAD",
-                modifier = Modifier.weight(1f),
-            )
+        SetMetricsCard(
+            reps = step.repsDisplay,
+            loadValue = step.loadValue,
+            loadUnit = step.loadUnit,
+            modifier = Modifier.padding(top = 28.dp),
+        )
+
+        val hasMeta = step.restSeconds > 0 || step.rpe != null
+        if (hasMeta) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(top = 20.dp),
+            ) {
+                if (step.restSeconds > 0) {
+                    MetaChip(
+                        icon = Lucide.Timer,
+                        text = formatRestSecondsShort(step.restSeconds),
+                    )
+                }
+                step.rpe?.let { rpe ->
+                    MetaChip(
+                        icon = Lucide.Gauge,
+                        text = "RPE $rpe",
+                    )
+                }
+            }
         }
 
-        RestMetaRow(
-            restSeconds = step.restSeconds,
-            rpe = step.rpe,
+        NextUpCard(
+            step = nextStep,
             modifier = Modifier.padding(top = 28.dp),
         )
     }
@@ -93,5 +99,5 @@ private fun CurrentSetPhasePreview() {
         setIndex = 1,
         totalSetsInBlock = 3,
     )
-    CurrentSetPhase(step = step)
+    CurrentSetPhase(step = step, nextStep = step.copy(setIndex = 2))
 }

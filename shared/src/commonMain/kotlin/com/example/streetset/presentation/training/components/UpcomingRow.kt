@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -95,12 +96,12 @@ private fun rememberUpcomingStyle(
 @Composable
 fun UpcomingRow(
     step: WorkoutStep,
-    showDivider: Boolean,
     state: UpcomingRowState = UpcomingRowState.Upcoming,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
     val style = rememberUpcomingStyle(step.protocol, state)
+    val shape = RoundedCornerShape(16.dp)
 
     val contentAlpha by animateFloatAsState(
         targetValue = if (style.isDone) 0.4f else 1f,
@@ -108,31 +109,34 @@ fun UpcomingRow(
         label = "upcoming_row_alpha",
     )
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        if (showDivider) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(0.5.dp)
-                    .background(colors.textTertiary.copy(alpha = 0.16f)),
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(
+                if (style.isCurrent) {
+                    colors.accent.copy(alpha = 0.14f)
+                } else {
+                    colors.surfaceHigh.copy(alpha = 0.55f)
+                },
             )
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(if (style.isCurrent) colors.surfaceHigh.copy(alpha = 0.7f) else colors.background)
-                .alpha(contentAlpha)
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-        ) {
-            when (step.protocol) {
-                TrainingProtocol.EMOM -> EmomUpcomingMeta(step = step, style = style)
-                TrainingProtocol.CIRCUIT, TrainingProtocol.SUPERSET -> GroupUpcomingMeta(step = step, style = style)
-                TrainingProtocol.HOLD -> HoldUpcomingMeta(step = step, style = style)
-                TrainingProtocol.METRONOME -> MetronomeUpcomingMeta(step = step, style = style)
-                else -> StandardUpcomingMeta(step = step, style = style)
-            }
+            .then(
+                if (style.isCurrent) {
+                    Modifier.border(1.dp, colors.accent.copy(alpha = 0.4f), shape)
+                } else {
+                    Modifier
+                },
+            )
+            .alpha(contentAlpha)
+            .padding(horizontal = 14.dp, vertical = 14.dp),
+    ) {
+        when (step.protocol) {
+            TrainingProtocol.EMOM -> EmomUpcomingMeta(step = step, style = style)
+            TrainingProtocol.CIRCUIT, TrainingProtocol.SUPERSET -> GroupUpcomingMeta(step = step, style = style)
+            TrainingProtocol.HOLD -> HoldUpcomingMeta(step = step, style = style)
+            TrainingProtocol.METRONOME -> MetronomeUpcomingMeta(step = step, style = style)
+            else -> StandardUpcomingMeta(step = step, style = style)
         }
     }
 }
@@ -181,7 +185,7 @@ private fun RowScope.HoldUpcomingMeta(step: WorkoutStep, style: UpcomingStyle) {
     if (hold != null && hold > 0) {
         RightValue(
             primary = formatRestSecondsShort(hold),
-            secondary = listOfNotNull("${step.repsDisplay} reps", step.loadDisplay()).joinToString("  "),
+            secondary = listOfNotNull("${step.repsDisplay} reps", step.loadDisplay).joinToString("  "),
             style = style,
             icon = Lucide.Hourglass,
         )
@@ -382,7 +386,7 @@ private fun RightValue(
 private fun StandardRight(step: WorkoutStep, style: UpcomingStyle) {
     RightValue(
         primary = "${step.repsDisplay} reps",
-        secondary = step.loadDisplay(),
+        secondary = step.loadDisplay,
         style = style,
     )
 }
@@ -457,9 +461,6 @@ private fun GroupExerciseLine(
 // Helpers
 private fun WorkoutStep.setLabel(): String = "Set $setIndex/$totalSetsInBlock"
 
-private fun WorkoutStep.loadDisplay(): String? =
-    loadValue.takeIf { it != "-" }?.let { value -> loadUnit?.let { "$value $it" } ?: value }
-
 /** Numbers get "kg", text like "BW" stays as is. */
 private fun formatLoad(raw: String?): String? {
     val load = raw?.trim().orEmpty()
@@ -513,9 +514,9 @@ private fun UpcomingRowPreviewStandard() {
         total = 3,
     )
     Column {
-        UpcomingRow(step = step, showDivider = false, state = UpcomingRowState.Done)
-        UpcomingRow(step = step, showDivider = false, state = UpcomingRowState.Current)
-        UpcomingRow(step = step, showDivider = false, state = UpcomingRowState.Upcoming)
+        UpcomingRow(step = step, state = UpcomingRowState.Done)
+        UpcomingRow(step = step, state = UpcomingRowState.Current)
+        UpcomingRow(step = step, state = UpcomingRowState.Upcoming)
     }
 }
 
@@ -528,7 +529,7 @@ private fun UpcomingRowPreviewEmom() {
         set = PlannedSet(id = 2, blockId = 2, setNumber = 1, repsText = "10", loadText = "BW"),
         total = 5,
     )
-    UpcomingRow(step = step, showDivider = false)
+    UpcomingRow(step = step)
 }
 
 @Preview(showBackground = true, name = "UpcomingRow - Hold")
@@ -541,7 +542,7 @@ private fun UpcomingRowPreviewHold() {
         setIndex = 1,
         total = 3,
     )
-    UpcomingRow(step = step, showDivider = false)
+    UpcomingRow(step = step)
 }
 
 @Preview(showBackground = true, name = "UpcomingRow - Metronome")
@@ -554,7 +555,7 @@ private fun UpcomingRowPreviewMetronome() {
         setIndex = 2,
         total = 3,
     )
-    UpcomingRow(step = step, showDivider = false)
+    UpcomingRow(step = step)
 }
 
 @Preview(showBackground = true, name = "UpcomingRow - Circuit and Superset")
@@ -580,7 +581,7 @@ private fun UpcomingRowPreviewGroups() {
         ),
     )
     Column {
-        UpcomingRow(step = circuit, showDivider = false, state = UpcomingRowState.Current)
-        UpcomingRow(step = superset, showDivider = true)
+        UpcomingRow(step = circuit, state = UpcomingRowState.Current)
+        UpcomingRow(step = superset)
     }
 }

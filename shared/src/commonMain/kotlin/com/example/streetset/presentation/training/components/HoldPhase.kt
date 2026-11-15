@@ -19,6 +19,7 @@ fun HoldPhase(
     secondsLeft: Int,
     targetSeconds: Int,
     prepareSecondsLeft: Int,
+    nextStep: WorkoutStep?,
     onStart: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -40,11 +41,11 @@ fun HoldPhase(
     TimedProtocolScaffold(
         title = step.exerciseName,
         highlight = "${targetSeconds}s HOLD",
-        protocolLabel = step.protocolDisplay,
-        accent = accent,
+        protocol = step.protocol,
         progress = progress,
         progressLabel = "hold_progress",
         footer = "Hold for ${targetSeconds}s",
+        nextStep = nextStep,
         modifier = modifier,
     ) {
         ProtocolCenterAnimated(
@@ -96,6 +97,7 @@ private fun HoldPhasePreview() {
         secondsLeft = 45,
         targetSeconds = 45,
         prepareSecondsLeft = 5,
+        nextStep = null,
         onStart = {},
     )
 }

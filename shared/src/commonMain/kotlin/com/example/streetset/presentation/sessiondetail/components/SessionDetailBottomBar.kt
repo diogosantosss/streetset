@@ -48,7 +48,9 @@ fun SessionDetailBottomBar(
 
     BottomBar(modifier, hazeState, isVisible) {
         Column(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 12.dp, end = 12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(

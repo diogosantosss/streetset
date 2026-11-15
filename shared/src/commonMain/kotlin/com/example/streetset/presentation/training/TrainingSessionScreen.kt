@@ -10,7 +10,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,10 +18,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.Text
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -30,26 +27,21 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.streetset.presentation.settings.VolumeViewModel
 import com.example.streetset.presentation.training.components.CurrentGroupPhase
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import com.example.streetset.presentation.training.components.CurrentSetPhase
 import com.example.streetset.presentation.training.components.EmomPhase
 import com.example.streetset.presentation.training.components.FinishedPhase
+import com.example.streetset.presentation.training.components.FullWorkoutSheet
+import com.example.streetset.presentation.training.components.FullWorkoutTrigger
 import com.example.streetset.presentation.training.components.HoldPhase
 import com.example.streetset.presentation.training.components.MetronomePhase
 import com.example.streetset.presentation.training.components.RestPhase
 import com.example.streetset.presentation.training.components.TrainingBottomBar
-import com.example.streetset.presentation.training.components.UpcomingRow
-import com.example.streetset.presentation.training.components.UpcomingRowState
 import com.example.streetset.presentation.training.components.VolumeSheet
 import com.example.streetset.presentation.training.components.volumeIcon
 import com.example.streetset.presentation.training.model.ActiveProtocolState
@@ -80,32 +72,37 @@ fun TrainingSessionScreen(
     var showVolume by remember { mutableStateOf(false) }
 
     var showExitConfirm by remember { mutableStateOf(false) }
+    var showFullWorkout by remember { mutableStateOf(false) }
 
-    val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
+    val heroScrollState = rememberScrollState()
 
     LaunchedEffect(uiState.currentIndex, uiState.phase) {
-        if (uiState.phase is TrainingPhase.Finished) return@LaunchedEffect
-        if (uiState.queue.isEmpty()) return@LaunchedEffect
-        scope.launch {
-            delay(160)
-            val target = uiState.currentIndex.coerceIn(0, uiState.queue.size - 1)
-            listState.animateScrollToItem(
-                index = target,
-                scrollOffset = -24,
-            )
-        }
+        heroScrollState.scrollTo(0)
     }
 
     val scrolled by remember {
-        derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0 }
+        derivedStateOf { heroScrollState.value > 0 }
     }
+
+    val isFinished = uiState.phase is TrainingPhase.Finished
+    val showBottomBar = when (uiState.phase) {
+        is TrainingPhase.Finished -> true
+        is TrainingPhase.Rest -> true
+        is TrainingPhase.Working -> uiState.awaitingFinish || uiState.protocol.canComplete
+        else -> false
+    }
+
+    val showTrigger = !isFinished && uiState.queue.isNotEmpty()
+    val bottomInset = if (showBottomBar) BOTTOM_BAR_HEIGHT else 24.dp
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(colors.background),
     ) {
+        val current = uiState.currentStep
+        val nextStep = uiState.queue.getOrNull(uiState.currentIndex + 1)
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -115,137 +112,123 @@ fun TrainingSessionScreen(
         ) {
             Spacer(modifier = Modifier.height(TopBarDefaults.Height + 16.dp))
 
-            val current = uiState.currentStep
-
-            AnimatedContent(
-                targetState = uiState.phase,
-                transitionSpec = {
-                    (fadeIn(tween(260)) + slideInVertically(tween(260), initialOffsetY = { it / 14 })).togetherWith(
-                        fadeOut(tween(200)) + slideOutVertically(tween(200), targetOffsetY = { -it / 14 }),
-                    )
-                },
-                label = "training_phase",
-            ) { phase ->
-                when (phase) {
-                    is TrainingPhase.Rest -> {
-                        RestPhase(
-                            restSecondsLeft = uiState.restSecondsLeft,
-                            restEndsAtMillis = uiState.restEndsAtMillis,
+            // Hero: the whole screen belongs to the current phase. It scrolls
+            // instead of overflowing for tall content (big circuits, etc.).
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .then(
+                        if (isFinished) {
+                            Modifier
+                        } else {
+                            Modifier.verticalScroll(heroScrollState)
+                        },
+                    ),
+            ) {
+                AnimatedContent(
+                    targetState = uiState.phase,
+                    modifier = Modifier.fillMaxWidth(),
+                    transitionSpec = {
+                        (fadeIn(tween(260)) + slideInVertically(tween(260), initialOffsetY = { it / 14 })).togetherWith(
+                            fadeOut(tween(200)) + slideOutVertically(tween(200), targetOffsetY = { -it / 14 }),
                         )
-                    }
+                    },
+                    label = "training_phase",
+                ) { phase ->
+                    when (phase) {
+                        is TrainingPhase.Rest -> {
+                            RestPhase(
+                                restSecondsLeft = uiState.restSecondsLeft,
+                                restTotalSeconds = uiState.restTotalSeconds,
+                                nextStep = nextStep,
+                                onAdjust = viewModel::adjustRest,
+                            )
+                        }
 
-                    is TrainingPhase.Working, TrainingPhase.Loading -> {
-                        if (current != null) {
-                            when (val protocol = uiState.protocol) {
-                                is ActiveProtocolState.Emom -> {
-                                    EmomPhase(
+                        is TrainingPhase.Working, TrainingPhase.Loading -> {
+                            if (current != null) {
+                                when (val protocol = uiState.protocol) {
+                                    is ActiveProtocolState.Emom -> {
+                                        EmomPhase(
+                                            step = current,
+                                            emomUiState = protocol.uiState,
+                                            currentRound = protocol.currentRound,
+                                            totalRounds = protocol.totalRounds,
+                                            secondsLeft = protocol.secondsLeft,
+                                            prepareSecondsLeft = protocol.prepareSecondsLeft,
+                                            nextStep = nextStep,
+                                            intervalSeconds = protocol.intervalSeconds,
+                                            onStart = viewModel::startActiveProtocol,
+                                        )
+                                    }
+
+                                    is ActiveProtocolState.Hold -> HoldPhase(
                                         step = current,
-                                        emomUiState = protocol.uiState,
-                                        currentRound = protocol.currentRound,
-                                        totalRounds = protocol.totalRounds,
+                                        holdUiState = protocol.uiState,
                                         secondsLeft = protocol.secondsLeft,
+                                        targetSeconds = protocol.targetSeconds,
                                         prepareSecondsLeft = protocol.prepareSecondsLeft,
-                                        intervalSeconds = protocol.intervalSeconds,
+                                        nextStep = nextStep,
                                         onStart = viewModel::startActiveProtocol,
                                     )
+
+                                    is ActiveProtocolState.Group -> CurrentGroupPhase(
+                                        step = current,
+                                        group = protocol,
+                                        nextStep = nextStep,
+                                    )
+
+                                    is ActiveProtocolState.Metronome -> MetronomePhase(
+                                        step = current,
+                                        metronome = protocol,
+                                        nextStep = nextStep,
+                                        onStart = viewModel::startActiveProtocol,
+                                    )
+
+                                    ActiveProtocolState.Idle -> CurrentSetPhase(
+                                        step = current,
+                                        nextStep = nextStep,
+                                    )
                                 }
-
-                                is ActiveProtocolState.Hold -> HoldPhase(
-                                    step = current,
-                                    holdUiState = protocol.uiState,
-                                    secondsLeft = protocol.secondsLeft,
-                                    targetSeconds = protocol.targetSeconds,
-                                    prepareSecondsLeft = protocol.prepareSecondsLeft,
-                                    onStart = viewModel::startActiveProtocol,
-                                )
-
-                                is ActiveProtocolState.Group -> CurrentGroupPhase(step = current, group = protocol)
-
-                                is ActiveProtocolState.Metronome -> MetronomePhase(
-                                    step = current,
-                                    metronome = protocol,
-                                    onStart = viewModel::startActiveProtocol,
-                                )
-
-                                ActiveProtocolState.Idle -> CurrentSetPhase(step = current)
                             }
                         }
-                    }
 
-                    TrainingPhase.Finished -> {
-                        FinishedPhase(
-                            sessionTitle = title,
-                            startedAtMillis = uiState.startedAtMillis,
-                            finishedAtMillis = uiState.finishedAtMillis,
-                            elapsedSeconds = uiState.elapsedSeconds,
-                            setsCompleted = uiState.setsCompleted,
-                            totalReps = uiState.totalReps,
-                            volumeKg = uiState.volumeKg,
-                            notes = uiState.notes,
-                            onNotesChange = viewModel::onNotesChange,
-                        )
-                    }
-                }
-            }
-
-            if (uiState.phase !is TrainingPhase.Finished && uiState.queue.isNotEmpty()) {
-                Text(
-                    text = "WORKOUT",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 0.8.sp,
-                    color = colors.textTertiary,
-                    modifier = Modifier.padding(top = 40.dp, bottom = 8.dp),
-                )
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentPadding = PaddingValues(bottom = BOTTOM_BAR_HEIGHT + 32.dp),
-                ) {
-                    itemsIndexed(
-                        items = uiState.queue,
-                        key = { _, step -> "tl_${step.blockWithSets.block.id ?: 0}_${step.set.id ?: step.setIndex}_${step.setIndex}" },
-                    ) { index, step ->
-                        val rowState = when {
-                            index < uiState.currentIndex ||
-                                (uiState.awaitingFinish && index == uiState.currentIndex) -> UpcomingRowState.Done
-                            index == uiState.currentIndex -> UpcomingRowState.Current
-                            else -> UpcomingRowState.Upcoming
-                        }
-                        val previous = uiState.queue.getOrNull(index - 1)
-                        val showDivider = index > 0 && rowState != UpcomingRowState.Current && previous?.let { prev ->
-                            prev.blockWithSets.block.id != step.blockWithSets.block.id || prev.setIndex != step.setIndex - 1
-                        } != false
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .animateItem(
-                                    fadeInSpec = tween(220),
-                                    fadeOutSpec = tween(180),
-                                    placementSpec = tween(220),
-                                ),
-                        ) {
-                            UpcomingRow(
-                                step = step,
-                                showDivider = showDivider,
-                                state = rowState,
+                        TrainingPhase.Finished -> {
+                            FinishedPhase(
+                                sessionTitle = title,
+                                startedAtMillis = uiState.startedAtMillis,
+                                finishedAtMillis = uiState.finishedAtMillis,
+                                elapsedSeconds = uiState.elapsedSeconds,
+                                setsCompleted = uiState.setsCompleted,
+                                totalReps = uiState.totalReps,
+                                volumeKg = uiState.volumeKg,
+                                notes = uiState.notes,
+                                onNotesChange = viewModel::onNotesChange,
                             )
                         }
                     }
                 }
-            } else if (uiState.phase !is TrainingPhase.Finished) {
-                Spacer(modifier = Modifier.weight(1f))
+
+                // Sits after the "Up next" card and scrolls with the phase.
+                if (showTrigger) {
+                    FullWorkoutTrigger(
+                        currentStep = uiState.currentIndex + 1,
+                        totalSteps = uiState.queue.size,
+                        onClick = { showFullWorkout = true },
+                        modifier = Modifier.padding(top = 20.dp, bottom = bottomInset),
+                    )
+                } else if (!isFinished) {
+                    Spacer(modifier = Modifier.height(bottomInset))
+                }
             }
         }
 
         TopBar(
-            title = if (uiState.phase is TrainingPhase.Finished) title else uiState.sessionTimer,
+            title = if (isFinished) title else uiState.sessionTimer,
             showBack = true,
             onBackClick = {
-                if (uiState.phase is TrainingPhase.Finished) {
+                if (isFinished) {
                     viewModel.saveAndExit(onFinish)
                 } else {
                     showExitConfirm = true
@@ -257,14 +240,6 @@ fun TrainingSessionScreen(
             scrolled = scrolled,
             modifier = Modifier.align(Alignment.TopCenter),
         )
-
-        val isFinished = uiState.phase is TrainingPhase.Finished
-        val showBottomBar = when (uiState.phase) {
-            is TrainingPhase.Finished -> true
-            is TrainingPhase.Rest -> true
-            is TrainingPhase.Working -> uiState.awaitingFinish || uiState.protocol.canComplete
-            else -> false
-        }
 
         TrainingBottomBar(
             isSessionPaused = uiState.sessionPaused,
@@ -287,6 +262,15 @@ fun TrainingSessionScreen(
                 .padding(horizontal = 24.dp)
                 .navigationBarsPadding()
                 .imePadding(),
+        )
+
+        FullWorkoutSheet(
+            visible = showFullWorkout,
+            queue = uiState.queue,
+            currentIndex = uiState.currentIndex,
+            awaitingFinish = uiState.awaitingFinish,
+            hazeState = hazeState,
+            onDismiss = { showFullWorkout = false },
         )
     }
 
@@ -311,4 +295,3 @@ fun TrainingSessionScreen(
         onDismiss = { showVolume = false },
     )
 }
-
