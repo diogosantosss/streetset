@@ -97,7 +97,10 @@ fun TopBar(
     )
 
     val blurModifier = if (hazeState != null) {
-        val style = HazeMaterials.thin(colors.background).then {
+        // Tint towards the top of the background gradient, not the plain background:
+        // `HazeMaterials.thin` mixes 65% of this color over the blur, so using the
+        // darker `background` made the bar read darker than the screen behind it.
+        val style = HazeMaterials.thin(colors.backgroundTop).then {
             progressive(HazeProgressive.bottomFade(startY = 120f, endY = 260f))
         }
         Modifier.hazeBlur(

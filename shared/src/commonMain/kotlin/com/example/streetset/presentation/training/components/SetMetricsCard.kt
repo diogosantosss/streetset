@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,7 @@ fun SetMetricsCard(
             .fillMaxWidth()
             .clip(shape)
             .background(colors.surfaceHigh.copy(alpha = 0.55f))
+            .background(Brush.verticalGradient(listOf(colors.glow, colors.glow.copy(alpha = 0f))))
             .border(1.dp, colors.border.copy(alpha = 0.5f), shape)
             .padding(vertical = 24.dp),
     ) {

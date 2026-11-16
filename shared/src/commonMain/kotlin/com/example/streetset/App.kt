@@ -36,6 +36,7 @@ import com.example.streetset.presentation.training.TrainingSessionScreen
 import com.example.streetset.ui.components.BottomTabBar
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
+import com.example.streetset.ui.theme.backgroundBrush
 import com.example.streetset.util.StreetSetNav.bottomBarEnter
 import com.example.streetset.util.StreetSetNav.bottomBarExit
 import com.example.streetset.util.StreetSetNav.enter
@@ -71,7 +72,7 @@ private fun StreetSetApp(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.background),
+            .background(colors.backgroundBrush),
     ) {
         NavHost(
             navController = navController,

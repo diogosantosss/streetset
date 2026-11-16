@@ -31,6 +31,7 @@ import com.example.streetset.ui.components.BOTTOM_BAR_HEIGHT
 import com.example.streetset.ui.components.TopBar
 import com.example.streetset.ui.components.TopBarDefaults
 import com.example.streetset.ui.theme.LocalAppColors
+import com.example.streetset.ui.theme.backgroundBrush
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import org.koin.compose.viewmodel.koinViewModel
@@ -54,7 +55,7 @@ fun StatsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.background),
+            .background(colors.backgroundBrush),
     ) {
         LazyColumn(
             state = listState,

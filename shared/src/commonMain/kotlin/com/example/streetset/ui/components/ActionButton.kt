@@ -64,8 +64,8 @@ fun ActionButton(
                 elevation = if (enabled) 10.dp else 0.dp,
                 shape = shape,
                 clip = false,
-                ambientColor = fill.copy(alpha = 0.25f),
-                spotColor = fill.copy(alpha = 0.40f),
+                ambientColor = fill.copy(alpha = 0.20f),
+                spotColor = fill.copy(alpha = 0.30f),
             )
             .clip(shape)
             .background(Brush.verticalGradient(listOf(fill, lerp(fill, Color.Black, 0.12f))))

@@ -15,13 +15,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -29,16 +25,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.composables.icons.lucide.Check
-import com.composables.icons.lucide.Lucide
 import com.example.streetset.ui.components.TopBar
 import com.example.streetset.ui.components.TopBarDefaults
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
+import com.example.streetset.ui.theme.backgroundBrush
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -53,7 +49,7 @@ fun SettingsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.background),
+            .background(colors.backgroundBrush),
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -70,23 +66,10 @@ fun SettingsScreen(
             }
 
             item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    ThemeColumn(
-                        themes = AppTheme.entries.filter { it.isDark },
-                        selectedTheme = selectedTheme,
-                        onSelect = settingsViewModel::selectTheme,
-                        modifier = Modifier.weight(1f),
-                    )
-                    ThemeColumn(
-                        themes = AppTheme.entries.filter { !it.isDark },
-                        selectedTheme = selectedTheme,
-                        onSelect = settingsViewModel::selectTheme,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+                ThemeSelector(
+                    selected = selectedTheme,
+                    onSelect = settingsViewModel::selectTheme,
+                )
             }
 
             item {
@@ -140,92 +123,42 @@ private fun SectionTitle(text: String) {
 }
 
 @Composable
-private fun ThemeColumn(
-    themes: List<AppTheme>,
-    selectedTheme: AppTheme,
+private fun ThemeSelector(
+    selected: AppTheme,
     onSelect: (AppTheme) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        themes.forEach { theme ->
-            ThemeTile(
-                theme = theme,
-                selected = theme == selectedTheme,
-                onClick = { onSelect(theme) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ThemeTile(
-    theme: AppTheme,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
-    val themeColors = theme.colors
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(18.dp)
 
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
             .clip(shape)
             .background(colors.surface)
-            .border(
-                width = if (selected) 2.dp else 1.dp,
-                color = if (selected) colors.accent else colors.border.copy(alpha = 0.6f),
-                shape = shape,
-            )
-            .clickable(onClick = onClick)
-            .padding(12.dp),
+            .border(1.dp, colors.border.copy(alpha = 0.6f), shape)
+            .padding(4.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(themeColors.background)
-                .border(1.dp, themeColors.border, RoundedCornerShape(10.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
+        AppTheme.entries.forEach { theme ->
+            val isSelected = theme == selected
+
             Box(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(14.dp)
-                    .clip(CircleShape)
-                    .background(themeColors.accent),
-            )
-        }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = theme.displayName,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = colors.textPrimary,
-                maxLines = 1,
-            )
-            Text(
-                text = theme.valueType,
-                fontSize = 11.sp,
-                color = colors.textTertiary,
-                maxLines = 1,
-            )
-        }
-
-        if (selected) {
-            Icon(
-                imageVector = Lucide.Check,
-                contentDescription = null,
-                tint = colors.accent,
-                modifier = Modifier.size(18.dp),
-            )
+                    .weight(1f)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (isSelected) colors.textPrimary else Color.Transparent)
+                    .clickable { onSelect(theme) }
+                    .padding(vertical = 11.dp),
+            ) {
+                Text(
+                    text = theme.displayName,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isSelected) colors.background else colors.textSecondary,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
