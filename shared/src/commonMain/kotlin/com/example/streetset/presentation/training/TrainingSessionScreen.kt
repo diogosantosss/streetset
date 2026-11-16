@@ -25,19 +25,22 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.dp
 import com.example.streetset.presentation.settings.VolumeViewModel
 import com.example.streetset.presentation.training.components.CurrentGroupPhase
 import com.example.streetset.presentation.training.components.CurrentSetPhase
 import com.example.streetset.presentation.training.components.EmomPhase
 import com.example.streetset.presentation.training.components.FinishedPhase
-import com.example.streetset.presentation.training.components.FullWorkoutSheet
-import com.example.streetset.presentation.training.components.FullWorkoutTrigger
+import com.example.streetset.presentation.training.components.FullWorkoutListAnimationMillis
+import com.example.streetset.presentation.training.components.FullWorkoutSection
 import com.example.streetset.presentation.training.components.HoldPhase
 import com.example.streetset.presentation.training.components.MetronomePhase
 import com.example.streetset.presentation.training.components.RestPhase
@@ -52,6 +55,7 @@ import com.example.streetset.ui.components.TopBarDefaults
 import com.example.streetset.ui.theme.LocalAppColors
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -72,12 +76,28 @@ fun TrainingSessionScreen(
     var showVolume by remember { mutableStateOf(false) }
 
     var showExitConfirm by remember { mutableStateOf(false) }
-    var showFullWorkout by remember { mutableStateOf(false) }
+    var workoutExpanded by remember { mutableStateOf(false) }
+    // Vertical position of the "Full workout" section inside the hero scroll.
+    var workoutSectionY by remember { mutableFloatStateOf(0f) }
 
     val heroScrollState = rememberScrollState()
 
     LaunchedEffect(uiState.currentIndex, uiState.phase) {
         heroScrollState.scrollTo(0)
+    }
+
+    // A new step means the phase is in charge again.
+    LaunchedEffect(uiState.currentIndex) {
+        workoutExpanded = false
+    }
+
+    // Reveal the expanded list by bringing the section to the top of the hero.
+    LaunchedEffect(workoutExpanded) {
+        if (workoutExpanded) {
+            // Wait for the list to unroll, otherwise the scroll has nowhere to go yet.
+            delay(FullWorkoutListAnimationMillis.toLong())
+            heroScrollState.animateScrollTo(workoutSectionY.toInt())
+        }
     }
 
     val scrolled by remember {
@@ -212,11 +232,15 @@ fun TrainingSessionScreen(
 
                 // Sits after the "Up next" card and scrolls with the phase.
                 if (showTrigger) {
-                    FullWorkoutTrigger(
-                        currentStep = uiState.currentIndex + 1,
-                        totalSteps = uiState.queue.size,
-                        onClick = { showFullWorkout = true },
-                        modifier = Modifier.padding(top = 20.dp, bottom = bottomInset),
+                    FullWorkoutSection(
+                        queue = uiState.queue,
+                        currentIndex = uiState.currentIndex,
+                        awaitingFinish = uiState.awaitingFinish,
+                        expanded = workoutExpanded,
+                        onToggle = { workoutExpanded = !workoutExpanded },
+                        modifier = Modifier
+                            .onGloballyPositioned { workoutSectionY = it.positionInParent().y }
+                            .padding(top = 20.dp, bottom = bottomInset),
                     )
                 } else if (!isFinished) {
                     Spacer(modifier = Modifier.height(bottomInset))
@@ -262,15 +286,6 @@ fun TrainingSessionScreen(
                 .padding(horizontal = 24.dp)
                 .navigationBarsPadding()
                 .imePadding(),
-        )
-
-        FullWorkoutSheet(
-            visible = showFullWorkout,
-            queue = uiState.queue,
-            currentIndex = uiState.currentIndex,
-            awaitingFinish = uiState.awaitingFinish,
-            hazeState = hazeState,
-            onDismiss = { showFullWorkout = false },
         )
     }
 
