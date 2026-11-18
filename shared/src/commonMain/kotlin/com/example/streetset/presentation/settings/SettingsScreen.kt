@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -27,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.streetset.ui.components.TopBar
@@ -42,6 +45,7 @@ fun SettingsScreen(
 ) {
     val colors = LocalAppColors.current
     val selectedTheme by settingsViewModel.theme.collectAsState()
+    val keepScreenOn by settingsViewModel.keepScreenOn.collectAsState()
     val appInfo = settingsViewModel.appInfo
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
@@ -68,6 +72,17 @@ fun SettingsScreen(
                 ThemeSelector(
                     selected = selectedTheme,
                     onSelect = settingsViewModel::selectTheme,
+                )
+            }
+
+            item {
+                SectionTitle(text = "Display")
+            }
+
+            item {
+                KeepScreenOnRow(
+                    enabled = keepScreenOn,
+                    onChange = settingsViewModel::setKeepScreenOn,
                 )
             }
 
@@ -181,6 +196,49 @@ private fun ThemeSelector(
 }
 
 @Composable
+private fun KeepScreenOnRow(
+    enabled: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    val colors = LocalAppColors.current
+    val shape = RoundedCornerShape(18.dp)
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(colors.surface)
+            .border(1.dp, colors.border.copy(alpha = 0.6f), shape)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Keep screen on",
+                fontSize = 15.sp,
+                color = colors.textPrimary,
+            )
+            Text(
+                text = "Prevent the screen from sleeping while the app is open",
+                fontSize = 12.sp,
+                color = colors.textTertiary,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        Switch(
+            checked = enabled,
+            onCheckedChange = onChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = colors.accent,
+                checkedTrackColor = colors.accent.copy(alpha = 0.5f),
+                uncheckedThumbColor = colors.textSecondary,
+                uncheckedTrackColor = colors.textTertiary.copy(alpha = 0.3f),
+            ),
+        )
+    }
+}
+
+@Composable
 private fun AboutRow(
     label: String,
     value: String,
@@ -218,4 +276,18 @@ private fun AboutDivider() {
             .height(1.dp)
             .background(colors.border.copy(alpha = 0.4f)),
     )
+}
+
+@Preview(showBackground = true, name = "Settings - Keep screen on")
+@Composable
+private fun KeepScreenOnRowPreview() {
+    AppTheme(theme = AppTheme.Graphite) {
+        Column(
+            modifier = Modifier
+                .background(LocalAppColors.current.background)
+                .padding(16.dp),
+        ) {
+            KeepScreenOnRow(enabled = true, onChange = {})
+        }
+    }
 }

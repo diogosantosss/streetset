@@ -8,6 +8,7 @@ import com.example.streetset.presentation.calendar.ImportSessionsViewModel
 import com.example.streetset.presentation.sessiondetail.AddBlockViewModel
 import com.example.streetset.presentation.sessiondetail.BlockOptionsViewModel
 import com.example.streetset.presentation.sessiondetail.SessionBlocksViewModel
+import com.example.streetset.presentation.settings.KeepScreenOnRepository
 import com.example.streetset.presentation.settings.SettingsViewModel
 import com.example.streetset.presentation.settings.ThemeRepository
 import com.example.streetset.presentation.settings.VolumeRepository
@@ -29,6 +30,7 @@ val appModule = module {
     // single instances
     singleOf(::DatabaseSeeder)
     singleOf(::ThemeRepository)
+    singleOf(::KeepScreenOnRepository)
     singleOf(::VolumeRepository) { createdAtStart() }
 
     // Tabs related VMs region

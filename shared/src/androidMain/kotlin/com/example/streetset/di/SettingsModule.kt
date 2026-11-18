@@ -3,6 +3,7 @@ package com.example.streetset.di
 import android.content.Context
 import android.os.Build
 import com.example.streetset.data.preferences.AppInfo
+import com.example.streetset.data.preferences.ScreenOnPreferences
 import com.example.streetset.data.preferences.ThemePreferences
 import com.example.streetset.util.fullDisplay
 import kotlinx.datetime.TimeZone
@@ -15,6 +16,7 @@ import androidx.core.content.edit
 
 actual val settingsModule: Module = module {
     single<ThemePreferences> { AndroidThemePreferences(androidContext()) }
+    single<ScreenOnPreferences> { AndroidScreenOnPreferences(androidContext()) }
     single { androidAppInfo(androidContext()) }
 }
 
@@ -25,6 +27,16 @@ private class AndroidThemePreferences(context: Context) : ThemePreferences {
 
     override fun saveTheme(name: String) {
         preferences.edit { putString(THEME_KEY, name) }
+    }
+}
+
+private class AndroidScreenOnPreferences(context: Context) : ScreenOnPreferences {
+    private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+
+    override fun read(): Boolean = preferences.getBoolean(KEEP_SCREEN_ON_KEY, false)
+
+    override fun save(enabled: Boolean) {
+        preferences.edit { putBoolean(KEEP_SCREEN_ON_KEY, enabled) }
     }
 }
 
@@ -56,3 +68,4 @@ private fun androidAppInfo(context: Context): AppInfo {
 
 private const val PREFERENCES_NAME = "streetset_preferences"
 private const val THEME_KEY = "theme"
+private const val KEEP_SCREEN_ON_KEY = "keep_screen_on"

@@ -11,6 +11,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -55,15 +56,17 @@ import org.koin.compose.viewmodel.koinViewModel
 fun App() {
     val settingsViewModel: SettingsViewModel = koinViewModel()
     val theme by settingsViewModel.theme.collectAsState()
+    val keepScreenOn by settingsViewModel.keepScreenOn.collectAsState()
 
     AppTheme(theme = theme) {
-        StreetSetApp()
+        StreetSetApp(keepScreenOn = keepScreenOn)
     }
 }
 
 @Composable
 private fun StreetSetApp(
     navController: NavHostController = rememberNavController(),
+    keepScreenOn: Boolean = false,
 ) {
     val colors = LocalAppColors.current
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -72,7 +75,8 @@ private fun StreetSetApp(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.backgroundBrush),
+            .background(colors.backgroundBrush)
+            .then(if (keepScreenOn) Modifier.keepScreenOn() else Modifier),
     ) {
         NavHost(
             navController = navController,
