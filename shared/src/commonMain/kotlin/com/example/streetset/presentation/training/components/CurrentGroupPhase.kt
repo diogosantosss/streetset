@@ -210,7 +210,7 @@ private fun CurrentGroupPhaseCircuitPreview() {
         round = 2,
     )
 
-    AppTheme(theme = AppTheme.Dark) {
+    AppTheme(theme = AppTheme.Graphite) {
         Column(modifier = Modifier.background(LocalAppColors.current.background).padding(24.dp)) {
             CurrentGroupPhase(
                 step = step,
@@ -233,7 +233,7 @@ private fun CurrentGroupPhaseSupersetPreview() {
         round = 3,
     )
 
-    AppTheme(theme = AppTheme.Dark) {
+    AppTheme(theme = AppTheme.Graphite) {
         Column(modifier = Modifier.background(LocalAppColors.current.background).padding(24.dp)) {
             CurrentGroupPhase(
                 step = step,

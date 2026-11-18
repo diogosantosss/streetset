@@ -96,7 +96,7 @@ fun BottomTabBar(
 @Preview
 @Composable
 private fun BottomTabBarPreview() {
-    AppTheme(theme = AppTheme.Dark) {
+    AppTheme(theme = AppTheme.Graphite) {
         Box(
             modifier = Modifier
                 .background(Color(0xFF1B1B21))

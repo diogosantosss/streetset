@@ -19,13 +19,10 @@ class ThemeRepository(
     }
 
     private fun loadTheme(): AppTheme {
-        val saved = preferences.readTheme() ?: return AppTheme.Dark
-        // Older builds stored the eight themes by name (LightWarm, DarkGreen, ...);
-        // keep the variant and drop the hue.
-        return when {
-            saved == AppTheme.System.name -> AppTheme.System
-            saved.startsWith("Light") -> AppTheme.Light
-            else -> AppTheme.Dark
-        }
+        val saved = preferences.readTheme() ?: return AppTheme.Graphite
+        AppTheme.entries.firstOrNull { it.name == saved }?.let { return it }
+        // Older builds stored System/Light/Dark, or one of the eight themed variants
+        // (LightWarm, DarkGreen, ...). Fold them into the closest new palette.
+        return if (saved.startsWith("Light")) AppTheme.Paper else AppTheme.Graphite
     }
 }

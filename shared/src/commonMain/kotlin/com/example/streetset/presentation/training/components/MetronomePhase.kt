@@ -2,14 +2,12 @@ package com.example.streetset.presentation.training.components
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,10 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -80,45 +74,17 @@ fun MetronomePhase(
             total = step.totalSetsInBlock,
         )
 
-        // Ring
-        Box(
-            contentAlignment = Alignment.Center,
+        TrainingClock(
+            progress = if (isRunning) 1f else 0f,
+            accent = accent,
+            stroke = 6.dp,
+            pulse = if (isRunning) pulse.value else null,
+            label = "metronome_clock",
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = 28.dp)
                 .size(200.dp),
         ) {
-            val track = colors.textTertiary.copy(alpha = 0.16f)
-
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val stroke = 6.dp.toPx()
-                val diameter = size.minDimension - stroke
-                val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
-                val arcSize = Size(diameter, diameter)
-
-                drawArc(
-                    color = track,
-                    startAngle = -90f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    topLeft = topLeft,
-                    size = arcSize,
-                    style = Stroke(width = stroke, cap = StrokeCap.Round),
-                )
-
-                if (isRunning) {
-                    drawArc(
-                        color = accent.copy(alpha = 0.45f + 0.55f * pulse.value),
-                        startAngle = -90f,
-                        sweepAngle = 360f,
-                        useCenter = false,
-                        topLeft = topLeft,
-                        size = arcSize,
-                        style = Stroke(width = stroke, cap = StrokeCap.Round),
-                    )
-                }
-            }
-
             ProtocolCenterAnimated(
                 targetState = isRunning,
                 label = "metronome_center",
@@ -228,7 +194,7 @@ private fun previewMetronomeStep(): WorkoutStep {
 @Preview(showBackground = true, name = "MetronomePhase - Idle")
 @Composable
 private fun MetronomePhaseIdlePreview() {
-    AppTheme(theme = AppTheme.Dark) {
+    AppTheme(theme = AppTheme.Graphite) {
         Column(modifier = Modifier.background(LocalAppColors.current.background).padding(24.dp)) {
             MetronomePhase(
                 step = previewMetronomeStep(),
@@ -243,7 +209,7 @@ private fun MetronomePhaseIdlePreview() {
 @Preview(showBackground = true, name = "MetronomePhase - Running")
 @Composable
 private fun MetronomePhaseRunningPreview() {
-    AppTheme(theme = AppTheme.Dark) {
+    AppTheme(theme = AppTheme.Graphite) {
         Column(modifier = Modifier.background(LocalAppColors.current.background).padding(24.dp)) {
             MetronomePhase(
                 step = previewMetronomeStep(),

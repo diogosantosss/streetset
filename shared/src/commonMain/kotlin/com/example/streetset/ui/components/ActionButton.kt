@@ -98,7 +98,7 @@ fun ActionButton(
 @Preview(showBackground = true, name = "ActionButton")
 @Composable
 private fun ActionButtonPreview() {
-    AppTheme(theme = AppTheme.Dark) {
+    AppTheme(theme = AppTheme.Graphite) {
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
@@ -114,7 +114,7 @@ private fun ActionButtonPreview() {
 @Preview(showBackground = true, name = "ActionButton - States")
 @Composable
 private fun ActionButtonStatesPreview() {
-    AppTheme(theme = AppTheme.Dark) {
+    AppTheme(theme = AppTheme.Graphite) {
         val colors = LocalAppColors.current
 
         Column(

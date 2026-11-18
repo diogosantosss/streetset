@@ -11,12 +11,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -33,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.example.streetset.presentation.settings.VolumeViewModel
 import com.example.streetset.presentation.training.components.CurrentGroupPhase
@@ -59,6 +63,7 @@ import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun TrainingSessionScreen(
@@ -82,6 +87,11 @@ fun TrainingSessionScreen(
     var workoutSectionY by remember { mutableFloatStateOf(0f) }
 
     val heroScrollState = rememberScrollState()
+    // The hero scrolls from the top of the screen now; keep the expanded list
+    // landing below the status bar and the TopBar, not behind the blur.
+    val heroTopInset = with(LocalDensity.current) {
+        (WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + TopBarDefaults.Height + 16.dp).toPx()
+    }
 
     LaunchedEffect(uiState.currentIndex, uiState.phase) {
         heroScrollState.scrollTo(0)
@@ -96,8 +106,8 @@ fun TrainingSessionScreen(
     LaunchedEffect(workoutExpanded) {
         if (workoutExpanded) {
             // Wait for the list to unroll, otherwise the scroll has nowhere to go yet.
-            delay(FullWorkoutListAnimationMillis.toLong())
-            heroScrollState.animateScrollTo(workoutSectionY.toInt())
+            delay(FullWorkoutListAnimationMillis.milliseconds)
+            heroScrollState.animateScrollTo((workoutSectionY - heroTopInset).toInt().coerceAtLeast(0))
         }
     }
 
@@ -124,21 +134,16 @@ fun TrainingSessionScreen(
         val current = uiState.currentStep
         val nextStep = uiState.queue.getOrNull(uiState.currentIndex + 1)
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .hazeSource(state = hazeState)
-                .statusBarsPadding()
-                .padding(horizontal = 24.dp),
-        ) {
-            Spacer(modifier = Modifier.height(TopBarDefaults.Height + 16.dp))
-
-            // Hero: the whole screen belongs to the current phase. It scrolls
-            // instead of overflowing for tall content (big circuits, etc.).
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Hero: the whole screen belongs to the current phase. The scroll container
+            // covers the TopBar too, so content passes under it and the blur reacts like
+            // on the Stats screen.
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .hazeSource(state = hazeState)
+                    .statusBarsPadding()
                     .then(
                         if (isFinished) {
                             Modifier
@@ -147,9 +152,13 @@ fun TrainingSessionScreen(
                         },
                     ),
             ) {
+                Spacer(modifier = Modifier.height(TopBarDefaults.Height + 16.dp))
+
                 AnimatedContent(
                     targetState = uiState.phase,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
                     transitionSpec = {
                         (fadeIn(tween(260)) + slideInVertically(tween(260), initialOffsetY = { it / 14 })).togetherWith(
                             fadeOut(tween(200)) + slideOutVertically(tween(200), targetOffsetY = { -it / 14 }),
@@ -241,7 +250,7 @@ fun TrainingSessionScreen(
                         onToggle = { workoutExpanded = !workoutExpanded },
                         modifier = Modifier
                             .onGloballyPositioned { workoutSectionY = it.positionInParent().y }
-                            .padding(top = 20.dp, bottom = bottomInset),
+                            .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = bottomInset),
                     )
                 } else if (!isFinished) {
                     Spacer(modifier = Modifier.height(bottomInset))

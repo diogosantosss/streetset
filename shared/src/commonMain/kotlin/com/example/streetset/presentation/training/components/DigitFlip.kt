@@ -24,8 +24,8 @@ fun DigitFlip(
     AnimatedContent(
         targetState = value,
         transitionSpec = {
-            (fadeIn(tween(160)) + slideInVertically(tween(160), initialOffsetY = { -it / 3 }))
-                .togetherWith(fadeOut(tween(140)) + slideOutVertically(tween(140), targetOffsetY = { it / 3 }))
+            (fadeIn(tween(240)) + slideInVertically(tween(240), initialOffsetY = { -it / 3 }))
+                .togetherWith(fadeOut(tween(200)) + slideOutVertically(tween(200), targetOffsetY = { it / 3 }))
         },
         label = "digit_flip",
         modifier = modifier,

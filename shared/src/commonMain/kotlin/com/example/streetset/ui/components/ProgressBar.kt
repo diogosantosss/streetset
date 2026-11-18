@@ -52,7 +52,7 @@ fun ProgressBar(
 @Preview
 @Composable
 private fun ProgressBarPreview() {
-    AppTheme(theme = AppTheme.Dark) {
+    AppTheme(theme = AppTheme.Graphite) {
         ProgressBar(progress = 0.5f)
     }
 }

@@ -25,7 +25,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -128,36 +127,54 @@ private fun ThemeSelector(
     onSelect: (AppTheme) -> Unit,
 ) {
     val colors = LocalAppColors.current
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(16.dp)
 
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(colors.surface)
-            .border(1.dp, colors.border.copy(alpha = 0.6f), shape)
-            .padding(4.dp),
-    ) {
-        AppTheme.entries.forEach { theme ->
-            val isSelected = theme == selected
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        AppTheme.entries.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { theme ->
+                    val isSelected = theme == selected
 
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(if (isSelected) colors.textPrimary else Color.Transparent)
-                    .clickable { onSelect(theme) }
-                    .padding(vertical = 11.dp),
-            ) {
-                Text(
-                    text = theme.displayName,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (isSelected) colors.background else colors.textSecondary,
-                    maxLines = 1,
-                )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(shape)
+                            .background(colors.surface)
+                            .border(
+                                width = 1.dp,
+                                color = if (isSelected) colors.accent else colors.border.copy(alpha = 0.6f),
+                                shape = shape,
+                            )
+                            .clickable { onSelect(theme) }
+                            .padding(12.dp),
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            listOf(theme.colors.background, theme.colors.surfaceHigh, theme.colors.accent)
+                                .forEach { swatch ->
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(20.dp)
+                                            .clip(RoundedCornerShape(5.dp))
+                                            .background(swatch)
+                                            .border(
+                                                1.dp,
+                                                colors.border.copy(alpha = 0.4f),
+                                                RoundedCornerShape(5.dp),
+                                            ),
+                                    )
+                                }
+                        }
+                        Text(
+                            text = theme.displayName,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isSelected) colors.textPrimary else colors.textSecondary,
+                            maxLines = 1,
+                        )
+                    }
+                }
             }
         }
     }

@@ -27,7 +27,7 @@ import kotlinx.datetime.plus
 
 @Composable
 fun StatsPreviewSurface(content: @Composable () -> Unit) {
-    AppTheme(theme = AppTheme.Dark) {
+    AppTheme(theme = AppTheme.Graphite) {
         Column(
             verticalArrangement = Arrangement.spacedBy(32.dp),
             modifier = Modifier

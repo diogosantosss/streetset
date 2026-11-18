@@ -30,9 +30,11 @@ object TrainingProtocolColors {
 }
 
 /**
- * Achromatic palette: the only colors in the app are the protocol accents
- * ([TrainingProtocolColors]) and success/error. [accent] is near-white on dark and
- * near-black on light, so it works both as a fill and as a text/icon tint.
+ * Achromatic palettes: the only colors in the app are the protocol accents
+ * ([TrainingProtocolColors]) and success/error. [accent] is near-white on the dark
+ * palettes and near-black on the light one, so it works both as a fill and as a
+ * text/icon tint. The four palettes share this structure and only differ in the
+ * value and temperature of their greys.
  */
 data class AppColors(
     val background: Color,
@@ -55,16 +57,17 @@ data class AppColors(
 val AppColors.backgroundBrush: Brush
     get() = Brush.verticalGradient(listOf(backgroundTop, background))
 
-val darkColors = AppColors(
-    background = Color(0xFF0B0C0E),
-    backgroundTop = Color(0xFF131519),
-    surface = Color(0xFF141518),
-    surfaceHigh = Color(0xFF1C1E22),
-    border = Color(0xFF2B2E33),
-    textPrimary = Color(0xFFF4F5F6),
-    textSecondary = Color(0xFF9A9FA6),
-    textTertiary = Color(0xFF6A6F76),
-    accent = Color(0xFFEDEEF0),
+/** A · Graphite — neutral grey, the default. */
+val graphiteColors = AppColors(
+    background = Color(0xFF14161A),
+    backgroundTop = Color(0xFF1C1E22),
+    surface = Color(0xFF202329),
+    surfaceHigh = Color(0xFF2A2E35),
+    border = Color(0xFF3A3F47),
+    textPrimary = Color(0xFFF7F8F9),
+    textSecondary = Color(0xFFB0B5BC),
+    textTertiary = Color(0xFF868C95),
+    accent = Color(0xFFF5F6F7),
     success = Color(0xFF4ADE80),
     onAccent = Color(0xFF0D0E10),
     shadow = Color(0x40000000),
@@ -72,15 +75,52 @@ val darkColors = AppColors(
     glow = Color(0x0FFFFFFF),
 )
 
-val lightColors = AppColors(
-    background = Color(0xFFF7F7F8),
-    backgroundTop = Color(0xFFF7F7F8),
+/** B · Slate — cool grey with a hint of blue. */
+val slateColors = AppColors(
+    background = Color(0xFF12171D),
+    backgroundTop = Color(0xFF1B2027),
+    surface = Color(0xFF222932),
+    surfaceHigh = Color(0xFF2C343E),
+    border = Color(0xFF3A4450),
+    textPrimary = Color(0xFFF2F5F8),
+    textSecondary = Color(0xFFA8B2BF),
+    textTertiary = Color(0xFF7E8996),
+    accent = Color(0xFFE8EEF5),
+    success = Color(0xFF4ADE80),
+    onAccent = Color(0xFF0D0E10),
+    shadow = Color(0x40000000),
+    error = Color(0xFFFF5C5C),
+    glow = Color(0x0FFFFFFF),
+)
+
+/** C · Warm Ash — grey with a warm, sandy tint. */
+val warmAshColors = AppColors(
+    background = Color(0xFF151311),
+    backgroundTop = Color(0xFF1E1C1A),
+    surface = Color(0xFF262320),
+    surfaceHigh = Color(0xFF302C28),
+    border = Color(0xFF413B35),
+    textPrimary = Color(0xFFFAF7F2),
+    textSecondary = Color(0xFFB8AFA5),
+    textTertiary = Color(0xFF8C8379),
+    accent = Color(0xFFF7F3EC),
+    success = Color(0xFF4ADE80),
+    onAccent = Color(0xFF0D0E10),
+    shadow = Color(0x40000000),
+    error = Color(0xFFFF5C5C),
+    glow = Color(0x0FFFFFFF),
+)
+
+/** D · Paper — warm off-white with white surfaces. */
+val paperColors = AppColors(
+    background = Color(0xFFEDEBE6),
+    backgroundTop = Color(0xFFF6F5F2),
     surface = Color(0xFFFFFFFF),
-    surfaceHigh = Color(0xFFEFEFF1),
-    border = Color(0xFFE2E2E5),
-    textPrimary = Color(0xFF101112),
-    textSecondary = Color(0xFF5B5F64),
-    textTertiary = Color(0xFF8E9298),
+    surfaceHigh = Color(0xFFF0EEE9),
+    border = Color(0xFFDBD8D1),
+    textPrimary = Color(0xFF1A1A19),
+    textSecondary = Color(0xFF63635F),
+    textTertiary = Color(0xFF8E8B85),
     accent = Color(0xFF1A1B1E),
     success = Color(0xFF12A150),
     onAccent = Color(0xFFFFFFFF),

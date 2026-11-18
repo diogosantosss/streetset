@@ -56,12 +56,10 @@ fun RestPhase(
             letterSpacing = 1.6.sp,
         )
 
-        ProtocolProgressRing(
+        TrainingClock(
             progress = progress,
             accent = accent,
-            stroke = 8.dp,
-            animateDurationMillis = 320,
-            progressLabel = "rest_progress",
+            label = "rest_progress",
             modifier = Modifier
                 .padding(top = 28.dp)
                 .size(248.dp),

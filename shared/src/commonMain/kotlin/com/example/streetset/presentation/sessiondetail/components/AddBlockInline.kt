@@ -824,7 +824,7 @@ private fun IconButton(
 private fun AddBlockPreviewHost(initial: AddBlockState) {
     var state by remember { mutableStateOf(initial) }
 
-    AppTheme(theme = AppTheme.Dark) {
+    AppTheme(theme = AppTheme.Graphite) {
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier

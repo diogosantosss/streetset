@@ -51,7 +51,7 @@ fun EmomPhase(
 
     TimedProtocolScaffold(
         title = step.exerciseName,
-        highlight = "${step.repsDisplay} REPS",
+        highlight = "Round ${currentRound + 1} of $totalRounds",
         protocol = step.protocol,
         progress = progress,
         progressLabel = "emom_progress",
@@ -75,6 +75,14 @@ fun EmomPhase(
                 }
             }
         },
+        metrics = {
+            SetMetricsCard(
+                reps = step.repsDisplay,
+                loadValue = step.loadValue,
+                loadUnit = step.loadUnit,
+                modifier = Modifier.padding(top = 24.dp),
+            )
+        },
     ) {
         ProtocolCenterAnimated(
             targetState = emomUiState,
@@ -87,7 +95,6 @@ fun EmomPhase(
                     label = "prepare_count",
                 )
                 EmomUiState.RUNNING -> ProtocolRunningSeconds(
-                    kicker = "ROUND ${currentRound + 1} / $totalRounds",
                     secondsLeft = secondsLeft,
                     label = "emom_seconds",
                 )

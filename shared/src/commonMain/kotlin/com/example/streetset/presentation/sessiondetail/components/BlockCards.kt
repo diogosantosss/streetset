@@ -157,7 +157,7 @@ fun GroupBlockSection(
                 .padding(horizontal = 16.dp, vertical = 9.dp),
         ) {
             Text(
-                text = block.rounds?.let { if (it == 1) "1 round" else "$it rounds" } ?: "Rounds",
+                text = roundsLabel(block.rounds),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = colors.textPrimary,
@@ -289,8 +289,11 @@ fun EmomBlockSection(
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
 ) {
-    val color = TrainingProtocolColors.colorFor(item.block.protocol.name, LocalAppColors.current.accent)
+    val colors = LocalAppColors.current
+    val color = TrainingProtocolColors.colorFor(item.block.protocol.name, colors.accent)
     val totalMinutes = item.sets.sumOf { it.minutes ?: 0 }
+    // Same fallback as WorkoutStep.emomRounds in training.
+    val rounds = item.block.rounds?.takeIf { it > 0 } ?: item.sets.size
 
     SectionFrame(
         block = item.block,
@@ -301,6 +304,28 @@ fun EmomBlockSection(
         onClick = onClick,
         onLongClick = onLongClick,
     ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 9.dp),
+        ) {
+            Text(
+                text = roundsLabel(rounds),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = colors.textPrimary,
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            if (item.block.restBetweenRoundsSeconds > 0) {
+                Text(
+                    text = "every ${formatSeconds(item.block.restBetweenRoundsSeconds)}",
+                    fontSize = 13.sp,
+                    color = colors.textSecondary,
+                )
+            }
+        }
+        InsetDivider()
         if (totalMinutes > 0) {
             HeroRow(Lucide.Clock, "$totalMinutes min", "EVERY MINUTE ON THE MINUTE", color)
             InsetDivider()
@@ -621,6 +646,11 @@ private fun formatLoad(raw: String?): String? {
 private fun String.normalizedProtocol(): String =
     lowercase().replace("_", "").replace("-", "").replace(" ", "")
 
+private fun roundsLabel(rounds: Int?): String = when (rounds) {
+    null -> "Rounds"
+    1 -> "1 round"
+    else -> "$rounds rounds"
+}
 
 private fun formatSeconds(total: Int): String {
     val minutes = total / 60
@@ -715,7 +745,7 @@ private fun MetaFooter(items: List<MetaItem>, modifier: Modifier = Modifier) {
 // Previews
 @Composable
 private fun PreviewSurface(content: @Composable ColumnScope.() -> Unit) {
-    AppTheme(theme = AppTheme.Dark) {
+    AppTheme(theme = AppTheme.Graphite) {
         Column(
             modifier = Modifier
                 .background(LocalAppColors.current.background)
@@ -839,7 +869,13 @@ private fun EmomBlockSectionPreview() {
     PreviewSurface {
         EmomBlockSection(
             BlockWithSets(
-                block = previewBlock(TrainingProtocol.EMOM, restSeconds = 30, rpe = 7),
+                block = previewBlock(
+                    protocol = TrainingProtocol.EMOM,
+                    restSeconds = 30,
+                    rounds = 5,
+                    restBetweenRoundsSeconds = 60,
+                    rpe = 7,
+                ),
                 exerciseName = "Kettlebell Swing",
                 sets = listOf(previewSet(1, 1, "12", "24kg", minutes = 10)),
             ),

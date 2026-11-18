@@ -220,7 +220,7 @@ private fun formatVolume(kg: Double): String = when {
 @Preview(showBackground = true)
 @Composable
 private fun FinishedPhasePreview() {
-    AppTheme(theme = AppTheme.Dark) {
+    AppTheme(theme = AppTheme.Graphite) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

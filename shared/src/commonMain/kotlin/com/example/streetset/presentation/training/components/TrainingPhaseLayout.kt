@@ -1,8 +1,6 @@
 package com.example.streetset.presentation.training.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -11,7 +9,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,7 +16,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -36,15 +32,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -155,6 +146,7 @@ internal fun TimedProtocolScaffold(
     nextStep: WorkoutStep?,
     modifier: Modifier = Modifier,
     extraBelowRing: @Composable (() -> Unit)? = null,
+    metrics: @Composable (() -> Unit)? = null,
     ringContent: @Composable BoxScope.() -> Unit,
 ) {
     val colors = LocalAppColors.current
@@ -166,7 +158,18 @@ internal fun TimedProtocolScaffold(
             .fillMaxWidth()
             .padding(top = 16.dp),
     ) {
-        ProtocolChip(protocol = protocol)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            ProtocolChip(protocol = protocol)
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = highlight,
+                fontSize = 13.sp,
+                color = colors.textSecondary,
+            )
+        }
 
         Text(
             text = title,
@@ -175,22 +178,15 @@ internal fun TimedProtocolScaffold(
             color = colors.textPrimary,
             textAlign = TextAlign.Center,
             modifier = Modifier
+                .fillMaxWidth()
                 .padding(top = 16.dp)
                 .padding(horizontal = 12.dp),
         )
 
-        Text(
-            text = highlight,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            color = accent,
-            modifier = Modifier.padding(top = 10.dp),
-        )
-
-        ProtocolProgressRing(
+        TrainingClock(
             progress = progress,
             accent = accent,
-            progressLabel = progressLabel,
+            label = progressLabel,
             modifier = Modifier
                 .padding(top = 32.dp)
                 .size(248.dp),
@@ -198,6 +194,8 @@ internal fun TimedProtocolScaffold(
         )
 
         extraBelowRing?.invoke()
+
+        metrics?.invoke()
 
         Text(
             text = footer,
@@ -210,57 +208,6 @@ internal fun TimedProtocolScaffold(
             step = nextStep,
             modifier = Modifier.padding(top = 28.dp),
         )
-    }
-}
-
-@Composable
-internal fun ProtocolProgressRing(
-    progress: Float,
-    accent: Color,
-    modifier: Modifier = Modifier,
-    stroke: Dp = 7.dp,
-    animateDurationMillis: Int = 280,
-    progressLabel: String = "protocol_progress",
-    content: @Composable BoxScope.() -> Unit,
-) {
-    val trackColor = LocalAppColors.current.textTertiary.copy(alpha = 0.16f)
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress.coerceIn(0f, 1f),
-        animationSpec = tween(durationMillis = animateDurationMillis, easing = LinearEasing),
-        label = progressLabel,
-    )
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier,
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val strokeWidth = stroke.toPx()
-            val diameter = size.minDimension
-            val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
-            val arcSize = Size(diameter, diameter)
-            val strokeStyle = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-
-            drawArc(
-                color = trackColor,
-                startAngle = -90f,
-                sweepAngle = 360f,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = strokeStyle,
-            )
-            drawArc(
-                color = accent,
-                startAngle = -90f,
-                sweepAngle = 360f * animatedProgress,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = strokeStyle,
-            )
-        }
-        content()
     }
 }
 
@@ -322,13 +269,15 @@ internal fun ProtocolGetReady(secondsLeft: Int, label: String) {
 
 @Composable
 internal fun ProtocolRunningSeconds(
-    kicker: String,
     secondsLeft: Int,
     label: String,
+    kicker: String? = null,
 ) {
     val colors = LocalAppColors.current
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        ProtocolKicker(kicker)
+        if (kicker != null) {
+            ProtocolKicker(kicker)
+        }
         SlidingNumber(
             value = secondsLeft,
             label = label,
@@ -389,8 +338,8 @@ private fun SlidingNumber(
     AnimatedContent(
         targetState = value,
         transitionSpec = {
-            (fadeIn(tween(160)) + slideInVertically(tween(160), initialOffsetY = { -it / slideDivisor }))
-                .togetherWith(fadeOut(tween(140)) + slideOutVertically(tween(140), targetOffsetY = { it / slideDivisor }))
+            (fadeIn(tween(240)) + slideInVertically(tween(240), initialOffsetY = { -it / slideDivisor }))
+                .togetherWith(fadeOut(tween(200)) + slideOutVertically(tween(200), targetOffsetY = { it / slideDivisor }))
         },
         label = label,
     ) { number ->

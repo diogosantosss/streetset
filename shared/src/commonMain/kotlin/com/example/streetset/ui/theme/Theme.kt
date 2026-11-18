@@ -1,6 +1,5 @@
 package com.example.streetset.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -9,29 +8,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 
-val LocalAppColors = staticCompositionLocalOf { lightColors }
+val LocalAppColors = staticCompositionLocalOf { graphiteColors }
 
-enum class AppTheme(val displayName: String) {
-    System("System"),
-    Light("Light"),
-    Dark("Dark"),
+enum class AppTheme(
+    val displayName: String,
+    val colors: AppColors,
+    val isDark: Boolean,
+) {
+    Graphite("Graphite", graphiteColors, true),
+    Slate("Slate", slateColors, true),
+    WarmAsh("Warm Ash", warmAshColors, true),
+    Paper("Paper", paperColors, false),
 }
 
 @Composable
 fun AppTheme(
-    theme: AppTheme = AppTheme.Dark,
+    theme: AppTheme = AppTheme.Graphite,
     content: @Composable () -> Unit
 ) {
-    val isDark = when (theme) {
-        AppTheme.System -> isSystemInDarkTheme()
-        AppTheme.Light -> false
-        AppTheme.Dark -> true
-    }
-    val colors = if (isDark) darkColors else lightColors
-
-    CompositionLocalProvider(LocalAppColors provides colors) {
+    CompositionLocalProvider(LocalAppColors provides theme.colors) {
         MaterialTheme(
-            colorScheme = colors.toColorScheme(isDark),
+            colorScheme = theme.colors.toColorScheme(theme.isDark),
             content = content
         )
     }
