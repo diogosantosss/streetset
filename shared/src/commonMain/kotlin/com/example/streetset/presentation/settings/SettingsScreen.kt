@@ -39,7 +39,7 @@ import com.example.streetset.ui.components.TopBar
 import com.example.streetset.ui.components.TopBarDefaults
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
-import com.example.streetset.ui.theme.backgroundBrush
+import com.example.streetset.ui.theme.TrainingProtocolColors
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import streetset.shared.generated.resources.Res
@@ -58,7 +58,7 @@ fun SettingsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.backgroundBrush),
+            .background(colors.background),
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -107,41 +107,39 @@ fun SettingsScreen(
                         painter = painterResource(Res.drawable.app_icon),
                         contentDescription = null,
                         modifier = Modifier
-                            .size(76.dp)
+                            .size(96.dp)
                             .clip(CircleShape),
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = appInfo.name,
-                        fontSize = 21.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = colors.textPrimary,
-                    )
-                    Text(
-                        text = "Version ${appInfo.versionName}",
-                        fontSize = 13.sp,
-                        color = colors.textTertiary,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Text(
-                        text = "Created by",
-                        fontSize = 12.sp,
-                        color = colors.textTertiary,
-                    )
-                    Text(
-                        text = "Diogo Santos",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = colors.textPrimary,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                    Text(
-                        text = "@diogosantosss",
-                        fontSize = 13.sp,
-                        color = colors.accent,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row {
+                        Text(
+                            text = "Street",
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.accent,
+                        )
+                        Text(
+                            text = "Set",
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TrainingProtocolColors.circuit,
+                        )
+                    }
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .padding(top = 12.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(colors.surface)
+                            .border(1.dp, colors.border.copy(alpha = 0.7f), RoundedCornerShape(50))
+                            .padding(horizontal = 12.dp, vertical = 5.dp),
+                    ) {
+                        Text(
+                            text = "Version ${appInfo.versionName}",
+                            fontSize = 12.sp,
+                            color = colors.textSecondary,
+                        )
+                    }
                 }
             }
         }

@@ -120,7 +120,7 @@ fun HistorySheets(
                     modifier = Modifier.weight(1f).height(48.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = colors.accent,
-                        contentColor = colors.textPrimary,
+                        contentColor = colors.onAccent,
                     ),
                 ) {
                     Text("Save")

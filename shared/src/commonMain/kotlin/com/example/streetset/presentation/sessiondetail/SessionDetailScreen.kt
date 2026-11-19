@@ -29,7 +29,6 @@ import com.example.streetset.ui.components.ConfirmSheet
 import com.example.streetset.ui.components.TopBar
 import com.example.streetset.ui.components.TopBarDefaults
 import com.example.streetset.ui.theme.LocalAppColors
-import com.example.streetset.ui.theme.backgroundBrush
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -65,7 +64,7 @@ fun SessionDetailScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.backgroundBrush),
+            .background(colors.background),
     ) {
         LazyColumn(
             state = listState,

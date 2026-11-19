@@ -1,6 +1,5 @@
 package com.example.streetset.ui.theme
 
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 /** Shared semantic palette for the training protocols shown throughout a session. */
@@ -38,7 +37,6 @@ object TrainingProtocolColors {
  */
 data class AppColors(
     val background: Color,
-    val backgroundTop: Color,
     val surface: Color,
     val surfaceHigh: Color,
     val border: Color,
@@ -53,14 +51,9 @@ data class AppColors(
     val glow: Color,
 )
 
-/** Very subtle vertical wash used behind every screen. */
-val AppColors.backgroundBrush: Brush
-    get() = Brush.verticalGradient(listOf(backgroundTop, background))
-
 /** A · Graphite — neutral grey, the default. */
 val graphiteColors = AppColors(
     background = Color(0xFF14161A),
-    backgroundTop = Color(0xFF1C1E22),
     surface = Color(0xFF202329),
     surfaceHigh = Color(0xFF2A2E35),
     border = Color(0xFF3A3F47),
@@ -78,7 +71,6 @@ val graphiteColors = AppColors(
 /** B · Slate — cool grey with a hint of blue. */
 val slateColors = AppColors(
     background = Color(0xFF12171D),
-    backgroundTop = Color(0xFF1B2027),
     surface = Color(0xFF222932),
     surfaceHigh = Color(0xFF2C343E),
     border = Color(0xFF3A4450),
@@ -96,7 +88,6 @@ val slateColors = AppColors(
 /** C · Warm Ash — grey with a warm, sandy tint. */
 val warmAshColors = AppColors(
     background = Color(0xFF151311),
-    backgroundTop = Color(0xFF1E1C1A),
     surface = Color(0xFF262320),
     surfaceHigh = Color(0xFF302C28),
     border = Color(0xFF413B35),
@@ -114,7 +105,6 @@ val warmAshColors = AppColors(
 /** D · Paper — warm off-white with white surfaces. */
 val paperColors = AppColors(
     background = Color(0xFFEDEBE6),
-    backgroundTop = Color(0xFFF6F5F2),
     surface = Color(0xFFFFFFFF),
     surfaceHigh = Color(0xFFF0EEE9),
     border = Color(0xFFDBD8D1),

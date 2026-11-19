@@ -87,7 +87,7 @@ fun ConfirmSheet(
                 } else {
                     ButtonDefaults.buttonColors(
                         containerColor = colors.accent,
-                        contentColor = colors.textPrimary,
+                        contentColor = colors.onAccent,
                     )
                 },
             ) {
