@@ -1,5 +1,6 @@
 package com.example.streetset.presentation.settings
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,8 +16,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -37,7 +40,10 @@ import com.example.streetset.ui.components.TopBarDefaults
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
 import com.example.streetset.ui.theme.backgroundBrush
+import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
+import streetset.shared.generated.resources.Res
+import streetset.shared.generated.resources.app_icon
 
 @Composable
 fun SettingsScreen(
@@ -87,29 +93,55 @@ fun SettingsScreen(
             }
 
             item {
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            item {
                 SectionTitle(text = "About")
             }
 
             item {
                 Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(colors.surface)
-                        .border(1.dp, colors.border.copy(alpha = 0.6f), RoundedCornerShape(18.dp))
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                        .padding(horizontal = 24.dp, vertical = 20.dp),
                 ) {
-                    AboutRow(label = "Name", value = appInfo.name)
-                    AboutDivider()
-                    AboutRow(label = "Version", value = appInfo.versionName)
-                    AboutDivider()
-                    AboutRow(label = "Build", value = appInfo.buildNumber)
-                    AboutDivider()
-                    AboutRow(label = "Last update", value = appInfo.lastUpdated)
+                    Image(
+                        painter = painterResource(Res.drawable.app_icon),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(76.dp)
+                            .clip(CircleShape),
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = appInfo.name,
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = "Version ${appInfo.versionName}",
+                        fontSize = 13.sp,
+                        color = colors.textTertiary,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Text(
+                        text = "Created by",
+                        fontSize = 12.sp,
+                        color = colors.textTertiary,
+                    )
+                    Text(
+                        text = "Diogo Santos",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = colors.textPrimary,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                    Text(
+                        text = "@diogosantosss",
+                        fontSize = 13.sp,
+                        color = colors.accent,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
                 }
             }
         }
@@ -236,46 +268,6 @@ private fun KeepScreenOnRow(
             ),
         )
     }
-}
-
-@Composable
-private fun AboutRow(
-    label: String,
-    value: String,
-) {
-    val colors = LocalAppColors.current
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 14.dp),
-    ) {
-        Text(
-            text = label,
-            fontSize = 15.sp,
-            color = colors.textSecondary,
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Text(
-            text = value,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium,
-            color = colors.textPrimary,
-        )
-    }
-}
-
-@Composable
-private fun AboutDivider() {
-    val colors = LocalAppColors.current
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(1.dp)
-            .background(colors.border.copy(alpha = 0.4f)),
-    )
 }
 
 @Preview(showBackground = true, name = "Settings - Keep screen on")

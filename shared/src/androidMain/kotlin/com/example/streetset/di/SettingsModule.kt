@@ -1,18 +1,13 @@
 package com.example.streetset.di
 
 import android.content.Context
-import android.os.Build
+import androidx.core.content.edit
 import com.example.streetset.data.preferences.AppInfo
 import com.example.streetset.data.preferences.ScreenOnPreferences
 import com.example.streetset.data.preferences.ThemePreferences
-import com.example.streetset.util.fullDisplay
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import kotlin.time.Instant
-import androidx.core.content.edit
 
 actual val settingsModule: Module = module {
     single<ThemePreferences> { AndroidThemePreferences(androidContext()) }
@@ -41,28 +36,11 @@ private class AndroidScreenOnPreferences(context: Context) : ScreenOnPreferences
 }
 
 private fun androidAppInfo(context: Context): AppInfo {
-    val packageInfo = context
-        .packageManager
-        .getPackageInfo(context.packageName, 0)
-
-    val lastUpdated = Instant.fromEpochMilliseconds(packageInfo.lastUpdateTime)
-        .toLocalDateTime(TimeZone.currentSystemDefault())
-        .date
-        .fullDisplay()
-
-    val buildNumber: String =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            packageInfo.longVersionCode.toString()
-        } else {
-            @Suppress("DEPRECATION")
-            packageInfo.versionCode.toString()
-        }
+    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
 
     return AppInfo(
         name = "StreetSet",
-        versionName = packageInfo.versionName ?: "-",
-        buildNumber = buildNumber,
-        lastUpdated = lastUpdated,
+        versionName = packageInfo.versionName ?: "1.0.0",
     )
 }
 
