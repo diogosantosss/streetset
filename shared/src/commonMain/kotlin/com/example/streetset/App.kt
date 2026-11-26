@@ -1,56 +1,29 @@
 package com.example.streetset
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.keepScreenOn
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
-import com.example.streetset.navigation.CalendarRoute
-import com.example.streetset.navigation.SessionDetailRoute
-import com.example.streetset.navigation.SettingsRoute
-import com.example.streetset.navigation.StatsRoute
-import com.example.streetset.navigation.Tab
-import com.example.streetset.navigation.TrainingSessionRoute
-import com.example.streetset.presentation.calendar.CalendarScreen
-import com.example.streetset.presentation.sessiondetail.SessionDetailScreen
-import com.example.streetset.presentation.settings.SettingsScreen
+import com.example.streetset.navigation.StreetSetNavigation
 import com.example.streetset.presentation.settings.SettingsViewModel
-import com.example.streetset.presentation.stats.StatsScreen
-import com.example.streetset.presentation.training.TrainingSessionScreen
-import com.example.streetset.ui.components.BottomTabBar
 import com.example.streetset.ui.theme.AppTheme
 import com.example.streetset.ui.theme.LocalAppColors
-import com.example.streetset.util.StreetSetNav.bottomBarEnter
-import com.example.streetset.util.StreetSetNav.bottomBarExit
-import com.example.streetset.util.StreetSetNav.enter
-import com.example.streetset.util.StreetSetNav.exit
-import com.example.streetset.util.StreetSetNav.finishPopEnter
-import com.example.streetset.util.StreetSetNav.finishPopExit
-import com.example.streetset.util.StreetSetNav.isDetail
-import com.example.streetset.util.StreetSetNav.navigateToTab
-import com.example.streetset.util.StreetSetNav.popEnter
-import com.example.streetset.util.StreetSetNav.popExit
-import com.example.streetset.util.StreetSetNav.tabOrCalendar
 import dev.chrisbanes.haze.rememberHazeState
 import org.koin.compose.viewmodel.koinViewModel
 
+/**
+ * Root composable of StreetSet.
+ *
+ * Owns only app-wide state: the selected theme and the keep-screen-on preference,
+ * both read from [SettingsViewModel]. Everything below this point is navigation,
+ * which lives in [StreetSetNavigation]. Keeping those concerns separate means the
+ * navigation graph does not need to know about settings, and the theme does not
+ * need to know about screens.
+ */
 @Composable
 fun App() {
     val settingsViewModel: SettingsViewModel = koinViewModel()
@@ -62,13 +35,21 @@ fun App() {
     }
 }
 
+/**
+ * Draws the single surface behind the whole app and hosts the navigator.
+ *
+ * The background is intentionally flat: a shallow vertical gradient produced
+ * visible 8-bit banding on iOS, so all screens read [LocalAppColors.background]
+ * instead of a brush. [HazeState] is created here and shared with every screen
+ * through [LocalHaze], so the TopBar blur reacts to scroll on any tab.
+ *
+ * [keepScreenOn] is applied to the root box rather than to individual screens so
+ * the display stays awake during a workout even if the user navigates away and
+ * back, without a flicker when a screen is replaced.
+ */
 @Composable
-private fun StreetSetApp(
-    navController: NavHostController = rememberNavController(),
-    keepScreenOn: Boolean = false,
-) {
+private fun StreetSetApp(keepScreenOn: Boolean) {
     val colors = LocalAppColors.current
-    val backStackEntry by navController.currentBackStackEntryAsState()
     val hazeState = rememberHazeState()
 
     Box(
@@ -77,87 +58,6 @@ private fun StreetSetApp(
             .background(colors.background)
             .then(if (keepScreenOn) Modifier.keepScreenOn() else Modifier),
     ) {
-        NavHost(
-            navController = navController,
-            startDestination = CalendarRoute,
-            modifier = Modifier.fillMaxSize(),
-            enterTransition = enter,
-            exitTransition = exit,
-            popEnterTransition = popEnter,
-            popExitTransition = popExit,
-        ) {
-            /**
-             * Bottom Bar Navigation Routes [CalendarRoute], [StatsRoute] & [SettingsRoute].
-             *
-             * These tabs are managed by NavHostController and [CalendarRoute] contains followup routes: [SessionDetailRoute] & [TrainingSessionRoute].
-             */
-            composable<CalendarRoute>(
-                popEnterTransition = {
-                    if (initialState.destination.hasRoute<TrainingSessionRoute>()) {
-                        finishPopEnter.invoke(this)
-                    } else {
-                        popEnter.invoke(this)
-                    }
-                },
-            ) {
-                CalendarScreen(
-                    hazeState = hazeState,
-                    onSessionClick = { sessionId, title ->
-                        navController.navigate(SessionDetailRoute(sessionId = sessionId, title = title))
-                    },
-                )
-            }
-
-            composable<StatsRoute> { StatsScreen(hazeState = hazeState) }
-
-            composable<SettingsRoute> { SettingsScreen() }
-
-            composable<SessionDetailRoute> { entry: NavBackStackEntry ->
-                val route = entry.toRoute<SessionDetailRoute>()
-                SessionDetailScreen(
-                    navController = navController,
-                    sessionId = route.sessionId,
-                    title = route.title,
-                    hazeState = hazeState,
-                )
-            }
-
-            composable<TrainingSessionRoute>(
-                popExitTransition = {
-                    if (targetState.destination.hasRoute<CalendarRoute>()) {
-                        finishPopExit.invoke(this)
-                    } else {
-                        popExit.invoke(this)
-                    }
-                },
-            ) { entry: NavBackStackEntry ->
-                val route = entry.toRoute<TrainingSessionRoute>()
-                TrainingSessionScreen(
-                    sessionId = route.sessionId,
-                    title = route.title,
-                    hazeState = hazeState,
-                    onBack = { navController.popBackStack() },
-                    onFinish = {
-                        navController.popBackStack<CalendarRoute>(inclusive = false)
-                    },
-                )
-            }
-        }
-
-        AnimatedVisibility(
-            visible = !backStackEntry.isDetail(),
-            enter = bottomBarEnter,
-            exit = bottomBarExit,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp)
-                .navigationBarsPadding(),
-        ) {
-            BottomTabBar(
-                selectedTab = backStackEntry.tabOrCalendar() ?: Tab.Calendar,
-                onTabSelected = { tab -> navController.navigateToTab(tab) },
-                hazeState = hazeState,
-            )
-        }
+        StreetSetNavigation(hazeState = hazeState)
     }
 }

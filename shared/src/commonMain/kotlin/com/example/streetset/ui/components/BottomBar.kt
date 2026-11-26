@@ -23,8 +23,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.streetset.ui.theme.LocalAppColors
-import com.example.streetset.util.StreetSetNav.bottomBarEnter
-import com.example.streetset.util.StreetSetNav.bottomBarExit
+import com.example.streetset.util.bottomBarEnter
+import com.example.streetset.util.bottomBarExit
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState

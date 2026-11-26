@@ -22,7 +22,7 @@ sqlite = "2.7.1"
 ksp = "2.3.12"
 lucide = "2.2.1"
 haze = "2.0.1"
-navigation = "2.10.0-rc01"
+voyager = "2.2.21-1.10.3"
 kotlinxSerialization = "1.9.0"
 napier = "2.7.1"
 
@@ -56,7 +56,9 @@ room3-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room
 sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
-androidx-navigation-compose = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyager" }
+voyager-tab-navigator = { module = "cafe.adriel.voyager:voyager-tab-navigator", version.ref = "voyager" }
+voyager-transitions = { module = "cafe.adriel.voyager:voyager-transitions", version.ref = "voyager" }
 composeIcons-lucide = { group = "com.composables", name = "icons-lucide-cmp", version.ref = "lucide" }
 haze = { group = "dev.chrisbanes.haze", name = "haze", version.ref = "haze" }
 haze-blur = { group = "dev.chrisbanes.haze", name = "haze-blur", version.ref = "haze" }

@@ -20,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import com.example.streetset.presentation.sessiondetail.components.AddBlockInline
 import com.example.streetset.presentation.sessiondetail.components.BlockOptionsSheet
 import com.example.streetset.presentation.sessiondetail.components.BlockSection
@@ -33,7 +32,6 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import com.example.streetset.navigation.TrainingSessionRoute
 import com.example.streetset.presentation.sessiondetail.components.SessionDetailBottomBar
 import com.example.streetset.ui.components.BOTTOM_BAR_HEIGHT
 import org.koin.compose.viewmodel.koinViewModel
@@ -41,10 +39,11 @@ import org.koin.core.parameter.parametersOf
 
 @Composable
 fun SessionDetailScreen(
-    navController: NavHostController,
     sessionId: Int,
     title: String,
     hazeState: HazeState,
+    onBackClick: () -> Unit,
+    onStartClick: () -> Unit,
     blocksViewModel: SessionBlocksViewModel = koinViewModel<SessionBlocksViewModel> { parametersOf(sessionId) },
     addBlockViewModel: AddBlockViewModel = koinViewModel<AddBlockViewModel> { parametersOf(sessionId) },
     optionsViewModel: BlockOptionsViewModel = koinViewModel<BlockOptionsViewModel>(),
@@ -123,7 +122,7 @@ fun SessionDetailScreen(
             scrolled = isSuccess && scrolled,
             hazeState = if (isSuccess) hazeState else null,
             showBack = true,
-            onBackClick = { navController.popBackStack() },
+            onBackClick = onBackClick,
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
@@ -131,9 +130,7 @@ fun SessionDetailScreen(
             title = title,
             hazeState = hazeState,
             isVisible = isSuccess,
-            onStartClick = {
-                navController.navigate(TrainingSessionRoute(sessionId = sessionId, title = title))
-            },
+            onStartClick = onStartClick,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 24.dp)

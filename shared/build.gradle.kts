@@ -63,7 +63,9 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
 
             // navigation
-            implementation(libs.androidx.navigation.compose)
+            implementation(libs.voyager.navigator)
+            implementation(libs.voyager.tab.navigator)
+            implementation(libs.voyager.transitions)
             implementation(libs.kotlinx.serialization.json)
 
             // logging
