@@ -1,5 +1,14 @@
 package com.example.streetset.presentation.calendar
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -85,9 +94,15 @@ import org.koin.compose.viewmodel.koinViewModel
 private const val PageCount = 2400
 private const val InitialPage = 1200
 private const val GridRows = 6
+private const val SelectedDayTransitionMillis = 220
 private val CellHeight = 44.dp
 private val DoneColor = Color(0xFF22C55E)
 private val MissedColor = Color(0xFFF59E0B)
+
+private data class SelectedDay(
+    val date: LocalDate,
+    val sessions: List<DaySession>,
+)
 
 @Composable
 fun CalendarScreen(
@@ -158,9 +173,8 @@ fun CalendarScreen(
                     }
                     item(key = "day") {
                         DaySection(
-                            date = current.selectedDate,
+                            day = SelectedDay(current.selectedDate, current.sessions),
                             today = today,
-                            sessions = current.sessions,
                             onSessionClick = onSessionClick,
                             onAdd = { createViewModel.open(current.selectedDate) },
                             onDelete = deleteViewModel::requestDelete,
@@ -312,6 +326,20 @@ private fun DayCell(
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAppColors.current
+    val circleColor by animateColorAsState(
+        targetValue = if (isSelected) colors.accent else Color.Transparent,
+        animationSpec = tween(SelectedDayTransitionMillis),
+        label = "selectedDayCircle",
+    )
+    val dayTextColor by animateColorAsState(
+        targetValue = when {
+            isSelected -> colors.background
+            isToday -> colors.accent
+            else -> colors.textPrimary
+        },
+        animationSpec = tween(SelectedDayTransitionMillis),
+        label = "selectedDayText",
+    )
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -329,17 +357,13 @@ private fun DayCell(
             modifier = Modifier
                 .size(34.dp)
                 .clip(CircleShape)
-                .background(if (isSelected) colors.accent else Color.Transparent),
+                .background(circleColor),
         ) {
             Text(
                 text = "$number",
                 fontSize = 16.sp,
                 fontWeight = if (isToday || isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                color = when {
-                    isSelected -> colors.background
-                    isToday -> colors.accent
-                    else -> colors.textPrimary
-                },
+                color = dayTextColor,
             )
         }
 
@@ -370,18 +394,53 @@ private fun DayCell(
 }
 
 // Selected day
+/**
+ * Animates the selected day's content as a whole.
+ *
+ * Date and sessions travel together as one state, so the outgoing content never
+ * shows the new day's sessions with the old heading. The circle in [DayCell]
+ * keeps its shape and size; only its colour fades.
+ */
 @Composable
 private fun DaySection(
-    date: LocalDate,
+    day: SelectedDay,
     today: LocalDate,
-    sessions: List<DaySession>,
     onSessionClick: (Int, String) -> Unit,
     onAdd: () -> Unit,
     onDelete: (DaySession) -> Unit,
     onToday: () -> Unit,
-    onImport: () -> Unit
+    onImport: () -> Unit,
+) {
+    AnimatedContent(
+        targetState = day,
+        transitionSpec = { selectedDaySpec() },
+        label = "selected_day_content",
+    ) { target ->
+        DaySectionContent(
+            day = target,
+            today = today,
+            onSessionClick = onSessionClick,
+            onAdd = onAdd,
+            onDelete = onDelete,
+            onToday = onToday,
+            onImport = onImport,
+        )
+    }
+}
+
+@Composable
+private fun DaySectionContent(
+    day: SelectedDay,
+    today: LocalDate,
+    onSessionClick: (Int, String) -> Unit,
+    onAdd: () -> Unit,
+    onDelete: (DaySession) -> Unit,
+    onToday: () -> Unit,
+    onImport: () -> Unit,
 ) {
     val colors = LocalAppColors.current
+    val date = day.date
+    val sessions = day.sessions
     val done = sessions.count { it.completed }
     val subtitle = when {
         sessions.isEmpty() -> "Nothing planned"
@@ -447,6 +506,21 @@ private fun DaySection(
             ImportSessionsRow(onClick = onImport)
         }
     }
+}
+
+/**
+ * Short horizontal slide with a fade, following the direction of the date change.
+ * The offset is a fraction of the width so it stays subtle on any screen size.
+ */
+private fun AnimatedContentTransitionScope<SelectedDay>.selectedDaySpec(): ContentTransform {
+    val forward = targetState.date > initialState.date
+    return (fadeIn(tween(SelectedDayTransitionMillis)) + slideInHorizontally(
+        animationSpec = tween(SelectedDayTransitionMillis),
+        initialOffsetX = { width -> if (forward) width / 16 else -width / 16 },
+    )) togetherWith (fadeOut(tween(SelectedDayTransitionMillis)) + slideOutHorizontally(
+        animationSpec = tween(SelectedDayTransitionMillis),
+        targetOffsetX = { width -> if (forward) -width / 16 else width / 16 },
+    ))
 }
 
 @Composable

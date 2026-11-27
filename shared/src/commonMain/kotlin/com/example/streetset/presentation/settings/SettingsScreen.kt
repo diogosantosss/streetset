@@ -113,16 +113,10 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Row {
                         Text(
-                            text = "Street",
+                            text = "StreetSet",
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
                             color = colors.accent,
-                        )
-                        Text(
-                            text = "Set",
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TrainingProtocolColors.circuit,
                         )
                     }
                     Box(

@@ -48,6 +48,8 @@ fun BottomTabBar(
     hazeState: HazeState? = null,
 ) {
     val colors = LocalAppColors.current
+    val firstTab = Tab.entries.first()
+    val lastTab = Tab.entries.last()
 
     BottomBar(modifier, hazeState) {
         Row(horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -72,7 +74,10 @@ fun BottomTabBar(
                         .pointerInput(tab) {
                             detectTapGestures { onTabSelected(tab) }
                         }
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .padding(
+                            start = if (tab == firstTab) 4.dp else 10.dp,
+                            end = if (tab == lastTab) 4.dp else 10.dp,
+                        ),
                 ) {
                     Icon(
                         imageVector = tab.icon,

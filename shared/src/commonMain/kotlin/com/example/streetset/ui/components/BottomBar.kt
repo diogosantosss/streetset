@@ -64,7 +64,7 @@ fun BottomBar(
                 .hazeBlur(input = HazeInput.Backdrop(hazeState), style = blurStyle)
                 .background(overlayColor)
                 .border(1.dp, colors.border.copy(alpha = 0.5f), shape)
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             content = content,
